@@ -1,5 +1,6 @@
 import React from 'react';
 import { Group, Path, Circle, Rect, Text, Line } from 'react-konva';
+import { useCanvasColors } from '../hooks/useCanvasColors';
 
 interface GateCanvasSymbolProps {
   type: string;
@@ -36,19 +37,20 @@ export const GateCanvasSymbol: React.FC<GateCanvasSymbolProps> = ({
   height = 30,
   state = 0,
   inputStates = [],
-  color = '#e2e8f0',
+  color,
   hovered = false,
   onAction,
 }) => {
+  const c = useCanvasColors();
   const normType = type.toLowerCase();
-  const stroke = hovered ? '#f1f5f9' : color;
+  const stroke = hovered ? c.gateStrokeHover : color ?? c.gateStroke;
 
   const body = (path: string, inset = 0) => (
     <Path
       data={path}
       stroke={stroke}
       strokeWidth={2}
-      fill="#334155"
+      fill={c.gateFill}
       fillOpacity={hovered ? 0.65 : 0.4}
       lineJoin="round"
       x={inset}
@@ -63,7 +65,7 @@ export const GateCanvasSymbol: React.FC<GateCanvasSymbolProps> = ({
       radius={BUBBLE}
       stroke={stroke}
       strokeWidth={2}
-      fill="#1e293b"
+      fill={c.gateBubble}
       listening={false}
     />
   );
@@ -142,7 +144,7 @@ export const GateCanvasSymbol: React.FC<GateCanvasSymbolProps> = ({
             } Z`}
             stroke={stroke}
             strokeWidth={2}
-            fill="#334155"
+            fill={c.gateFill}
             fillOpacity={hovered ? 0.65 : 0.4}
             lineJoin="round"
           />
@@ -157,7 +159,7 @@ export const GateCanvasSymbol: React.FC<GateCanvasSymbolProps> = ({
             data={`M 0 ${height * 0.08} L ${width} ${height / 2} L 0 ${height * 0.92} Z`}
             stroke={stroke}
             strokeWidth={2}
-            fill="#334155"
+            fill={c.gateFill}
             fillOpacity={hovered ? 0.65 : 0.4}
             lineJoin="round"
           />
@@ -181,7 +183,7 @@ export const GateCanvasSymbol: React.FC<GateCanvasSymbolProps> = ({
               width={w}
               height={h}
               cornerRadius={h / 2}
-              fill="#22c55e"
+              fill={c.greenBright}
               opacity={0.25}
               listening={false}
             />
@@ -190,15 +192,15 @@ export const GateCanvasSymbol: React.FC<GateCanvasSymbolProps> = ({
             width={w}
             height={h}
             cornerRadius={h / 2}
-            fill={isOn ? '#15803d' : '#3f3f46'}
-            stroke={isOn ? '#22c55e' : '#52525b'}
+            fill={isOn ? c.green : c.partStroke}
+            stroke={isOn ? c.greenBright : c.partStroke}
             strokeWidth={1.5}
           />
           <Circle
             x={isOn ? w - 12 : 12}
             y={h / 2}
             radius={h / 2 - 5}
-            fill="#ffffff"
+            fill={c.knob}
           />
           <Text
             text={isOn ? '1' : '0'}
@@ -207,7 +209,7 @@ export const GateCanvasSymbol: React.FC<GateCanvasSymbolProps> = ({
             align="center"
             fontSize={12}
             fontStyle="bold"
-            fill={isOn ? '#4ade80' : '#a1a1aa'}
+            fill={isOn ? c.greenText : c.partText}
             listening={false}
           />
         </Group>
@@ -225,13 +227,13 @@ export const GateCanvasSymbol: React.FC<GateCanvasSymbolProps> = ({
           onTap={onAction}
           style={{ cursor: 'pointer' }}
         >
-          <Circle radius={r} fill="#27272a" stroke="#52525b" strokeWidth={2} />
-          <Circle radius={r - 5} fill={isPressed ? '#ef4444' : '#dc2626'} />
+          <Circle radius={r} fill={c.partFill} stroke={c.partStroke} strokeWidth={2} />
+          <Circle radius={r - 5} fill={isPressed ? c.redBright : c.red} />
           <Circle
             x={-3}
             y={-3}
             radius={r * 0.28}
-            fill="#ffffff"
+            fill={c.knob}
             opacity={0.25}
             listening={false}
           />
@@ -251,7 +253,7 @@ export const GateCanvasSymbol: React.FC<GateCanvasSymbolProps> = ({
           {isHigh && (
             <Path
               data={wave}
-              stroke="#38bdf8"
+              stroke={c.hl}
               strokeWidth={7}
               opacity={0.25}
               lineCap="round"
@@ -260,7 +262,7 @@ export const GateCanvasSymbol: React.FC<GateCanvasSymbolProps> = ({
           )}
           <Path
             data={wave}
-            stroke={isHigh ? '#38bdf8' : '#64748b'}
+            stroke={isHigh ? c.hl : c.hlDim}
             strokeWidth={2.5}
             lineCap="round"
             lineJoin="round"
@@ -279,8 +281,8 @@ export const GateCanvasSymbol: React.FC<GateCanvasSymbolProps> = ({
             width={size}
             height={size}
             cornerRadius={5}
-            fill={isHigh ? '#064e3b' : '#18181b'}
-            stroke={isHigh ? '#22c55e' : '#52525b'}
+            fill={isHigh ? c.partHiFill : c.partFill}
+            stroke={isHigh ? c.greenBright : c.partStroke}
             strokeWidth={1.5}
           />
           <Text
@@ -290,7 +292,7 @@ export const GateCanvasSymbol: React.FC<GateCanvasSymbolProps> = ({
             align="center"
             fontSize={15}
             fontStyle="bold"
-            fill={isHigh ? '#4ade80' : '#9ca3af'}
+            fill={isHigh ? c.greenText : c.partText}
           />
         </Group>
       );
@@ -302,20 +304,20 @@ export const GateCanvasSymbol: React.FC<GateCanvasSymbolProps> = ({
       return (
         <Group x={x} y={y} listening={false}>
           {isOn && (
-            <Circle radius={r + 5} fill="#22c55e" opacity={0.22} />
+            <Circle radius={r + 5} fill={c.greenBright} opacity={0.22} />
           )}
           <Circle
             radius={r}
-            fill="#18181b"
-            stroke={isOn ? '#22c55e' : '#3f3f46'}
+            fill={c.partFill}
+            stroke={isOn ? c.greenBright : c.partStroke}
             strokeWidth={2}
           />
-          <Circle radius={Math.max(r - 4, 2)} fill={isOn ? '#22c55e' : '#1e293b'} />
+          <Circle radius={Math.max(r - 4, 2)} fill={isOn ? c.greenBright : c.gateBubble} />
           <Circle
             x={-r * 0.3}
             y={-r * 0.3}
             radius={Math.max(r * 0.22, 1.5)}
-            fill="#ffffff"
+            fill={c.knob}
             opacity={isOn ? 0.65 : 0.15}
           />
         </Group>
@@ -332,8 +334,8 @@ export const GateCanvasSymbol: React.FC<GateCanvasSymbolProps> = ({
             width={width}
             height={height}
             cornerRadius={5}
-            fill="#09090b"
-            stroke={isHigh ? '#22c55e' : '#3f3f46'}
+            fill={c.partFill}
+            stroke={isHigh ? c.greenBright : c.partStroke}
             strokeWidth={1.5}
           />
           <Text
@@ -344,14 +346,14 @@ export const GateCanvasSymbol: React.FC<GateCanvasSymbolProps> = ({
             fontSize={12}
             fontStyle="bold"
             fontFamily="monospace"
-            fill={isHigh ? '#22c55e' : '#71717a'}
+            fill={isHigh ? c.greenBright : c.partText}
           />
         </Group>
       );
     }
 
     case 'sevenseg': {
-      const seg = (i: number) => (inputStates[i] === 1 ? '#ef4444' : '#2a2a2e');
+      const seg = (i: number) => (inputStates[i] === 1 ? c.redBright : c.segOff);
       const w = width;
       const h = height;
       const pad = 6;
@@ -373,8 +375,8 @@ export const GateCanvasSymbol: React.FC<GateCanvasSymbolProps> = ({
             width={w}
             height={h}
             cornerRadius={3}
-            fill="#09090b"
-            stroke="#27272a"
+            fill={c.partFill}
+            stroke={c.partStroke}
             strokeWidth={2}
           />
           {line(0, [left, pad, right, pad])}
@@ -404,8 +406,8 @@ export const GateCanvasSymbol: React.FC<GateCanvasSymbolProps> = ({
             width={w}
             height={h}
             cornerRadius={6}
-            fill="#12233b"
-            stroke="#3b6ea5"
+            fill={c.numinFill}
+            stroke={c.numinStroke}
             strokeWidth={1.5}
           />
           <Text
@@ -415,7 +417,7 @@ export const GateCanvasSymbol: React.FC<GateCanvasSymbolProps> = ({
             align="center"
             fontSize={9}
             fontFamily="system-ui, sans-serif"
-            fill="#7dd3fc"
+            fill={c.numinLabel}
             listening={false}
           />
           <Text
@@ -426,7 +428,7 @@ export const GateCanvasSymbol: React.FC<GateCanvasSymbolProps> = ({
             fontSize={14}
             fontStyle="bold"
             fontFamily="monospace"
-            fill="#e2e8f0"
+            fill={c.numinValue}
             listening={false}
           />
         </Group>
@@ -443,8 +445,8 @@ export const GateCanvasSymbol: React.FC<GateCanvasSymbolProps> = ({
             width={w}
             height={h}
             cornerRadius={6}
-            fill="#0f2417"
-            stroke="#3f7a53"
+            fill={c.numoutFill}
+            stroke={c.numoutStroke}
             strokeWidth={1.5}
           />
           <Text
@@ -454,7 +456,7 @@ export const GateCanvasSymbol: React.FC<GateCanvasSymbolProps> = ({
             align="center"
             fontSize={9}
             fontFamily="system-ui, sans-serif"
-            fill="#86efac"
+            fill={c.numoutLabel}
             listening={false}
           />
           <Text
@@ -465,7 +467,7 @@ export const GateCanvasSymbol: React.FC<GateCanvasSymbolProps> = ({
             fontSize={14}
             fontStyle="bold"
             fontFamily="monospace"
-            fill="#f0fdf4"
+            fill={c.numoutValue}
             listening={false}
           />
         </Group>

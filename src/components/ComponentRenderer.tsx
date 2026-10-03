@@ -3,6 +3,7 @@ import { Group, Rect, Text, Line } from 'react-konva';
 import { Pin } from '../canvas/Pin';
 import { GateCanvasSymbol } from '../canvas/GateCanvasSymbol';
 import { Point } from '../types';
+import { useCanvasColors } from '../hooks/useCanvasColors';
 import { getComponentGeometry } from '../components/componentGeometry';
 import {
   CUSTOM_TYPE_PREFIX,
@@ -122,6 +123,7 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
   onComponentAction,
 }) => {
   const [isHovered, setIsHovered] = useState(false);
+  const c = useCanvasColors();
   const geometry = getComponentGeometry(type, numInputs, numBits);
   const pinList = pins || getDefaultPinsForType(type, id, numInputs, numBits);
   const customDef = customDefOf(type);
@@ -185,7 +187,7 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
           width={geometry.width + 10}
           height={geometry.height + 10}
           cornerRadius={8}
-          stroke="#3584e4"
+          stroke={c.hl}
           strokeWidth={1.5}
           dash={[4, 3]}
           listening={false}
@@ -198,14 +200,14 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
             width={geometry.width}
             height={geometry.height}
             cornerRadius={8}
-            fill="#1f2937"
-            stroke={isSelected ? '#3584e4' : '#4b5563'}
+            fill={c.gateBubble}
+            stroke={isSelected ? c.hl : c.partStroke}
             strokeWidth={1.5}
             listening={false}
           />
           <Text
             text={customDefOf(type)?.name ?? 'Custom'}
-            fill="#cbd5e1"
+            fill={c.gateStroke}
             fontSize={11}
             fontStyle="bold"
             fontFamily="system-ui, -apple-system, sans-serif"
@@ -219,7 +221,7 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
             text={`${customDefOf(type)?.inputs.length ?? 0} in · ${
               customDefOf(type)?.outputs.length ?? 0
             } out`}
-            fill="#6b7280"
+            fill={c.partText}
             fontSize={9}
             fontFamily="system-ui, -apple-system, sans-serif"
             x={6}
@@ -245,7 +247,7 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
 
       <Text
         text={displayLabel}
-        fill={isHovered ? '#cbd5e1' : '#64748b'}
+        fill={isHovered ? c.gateStroke : c.pinIdle}
         fontSize={9}
         fontStyle="bold"
         fontFamily="system-ui, -apple-system, sans-serif"
@@ -265,7 +267,7 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
             {/* Schematic leg: pin terminal -> symbol body */}
             <Line
               points={[pin.offset.x, pin.offset.y, legEndX, pin.offset.y]}
-              stroke={pinState === 1 ? '#22c55e' : '#5b6472'}
+              stroke={pinState === 1 ? c.greenBright : c.hlDim}
               strokeWidth={2}
               lineCap="round"
               listening={false}

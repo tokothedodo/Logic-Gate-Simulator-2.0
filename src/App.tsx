@@ -1,11 +1,14 @@
 import { Canvas } from "./canvas";
+import { ThemeProvider } from "./hooks/useTheme";
 import "./App.css";
 
 function App() {
   return (
-    <div className="w-full h-screen overflow-hidden">
-      <Canvas />
-    </div>
+    <ThemeProvider>
+      <div className="w-full h-screen overflow-hidden">
+        <Canvas />
+      </div>
+    </ThemeProvider>
   );
 }
 

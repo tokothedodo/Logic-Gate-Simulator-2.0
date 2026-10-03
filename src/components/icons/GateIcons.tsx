@@ -153,7 +153,7 @@ export const BufferGateIcon: React.FC<GateIconProps> = ({ className = 'w-6 h-6',
 export const ToggleSwitchIcon: React.FC<GateIconProps> = ({ className = 'w-6 h-6', size = 24, active = false }) => (
   <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
     <rect x="4" y="9" width="24" height="14" rx="7" fill={active ? '#26a269' : '#374151'} stroke="currentColor" strokeWidth="1.5" />
-    <circle cx={active ? '21' : '11'} cy="16" r="5" fill="#ffffff" filter="drop-shadow(0px 1px 2px rgba(0,0,0,0.4))" />
+    <circle cx={active ? '21' : '11'} cy="16" r="5" fill="var(--k-knob)" filter="drop-shadow(0px 1px 2px rgba(0,0,0,0.4))" />
   </svg>
 );
 
@@ -161,7 +161,7 @@ export const PushButtonIcon: React.FC<GateIconProps> = ({ className = 'w-6 h-6',
   <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
     <rect x="4" y="4" width="24" height="24" rx="6" stroke="currentColor" strokeWidth="2" fill="currentColor" fillOpacity="0.08" />
     <circle cx="16" cy="16" r="7" stroke="currentColor" strokeWidth="2" fill="#ef4444" fillOpacity="0.8" />
-    <circle cx="16" cy="16" r="4" fill="#ffffff" fillOpacity="0.3" />
+    <circle cx="16" cy="16" r="4" fill="var(--k-knob)" fillOpacity="0.3" />
   </svg>
 );
 
@@ -181,7 +181,7 @@ export const ClockIcon: React.FC<GateIconProps> = ({ className = 'w-6 h-6', size
 export const Constant0Icon: React.FC<GateIconProps> = ({ className = 'w-6 h-6', size = 24 }) => (
   <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
     <rect x="5" y="5" width="22" height="22" rx="6" stroke="currentColor" strokeWidth="2" fill="currentColor" fillOpacity="0.08" />
-    <text x="16" y="21" textAnchor="middle" fill="#9ca3af" fontSize="15" fontWeight="bold" fontFamily="monospace">0</text>
+    <text x="16" y="21" textAnchor="middle" fill="var(--text-faint)" fontSize="15" fontWeight="bold" fontFamily="monospace">0</text>
   </svg>
 );
 
@@ -202,7 +202,7 @@ export const LedLightIcon: React.FC<GateIconProps> = ({ className = 'w-6 h-6', s
       stroke={active ? '#4ade80' : '#475569'}
       strokeWidth="2"
     />
-    <circle cx="13" cy="13" r="3" fill="#ffffff" fillOpacity={active ? 0.8 : 0.2} />
+    <circle cx="13" cy="13" r="3" fill="var(--k-knob)" fillOpacity={active ? 0.8 : 0.2} />
     {/* Radiating rays */}
     <line x1="16" y1="3" x2="16" y2="5" stroke={active ? '#22c55e' : '#64748b'} strokeWidth="2" strokeLinecap="round" />
     <line x1="25.2" y1="6.8" x2="23.8" y2="8.2" stroke={active ? '#22c55e' : '#64748b'} strokeWidth="2" strokeLinecap="round" />
@@ -214,7 +214,7 @@ export const LedLightIcon: React.FC<GateIconProps> = ({ className = 'w-6 h-6', s
 
 export const SevenSegIcon: React.FC<GateIconProps> = ({ className = 'w-6 h-6', size = 24 }) => (
   <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
-    <rect x="5" y="4" width="22" height="24" rx="4" stroke="currentColor" strokeWidth="2" fill="#090d16" />
+    <rect x="5" y="4" width="22" height="24" rx="4" stroke="currentColor" strokeWidth="2" fill="var(--part-fill)" />
     {/* Figure-8 segments */}
     <line x1="11" y1="8" x2="21" y2="8" stroke="#ef4444" strokeWidth="2.2" strokeLinecap="round" />
     <line x1="10" y1="10" x2="10" y2="14" stroke="#ef4444" strokeWidth="2.2" strokeLinecap="round" />
@@ -228,7 +228,7 @@ export const SevenSegIcon: React.FC<GateIconProps> = ({ className = 'w-6 h-6', s
 
 export const ProbeIcon: React.FC<GateIconProps> = ({ className = 'w-6 h-6', size = 24 }) => (
   <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
-    <rect x="4" y="7" width="24" height="18" rx="4" stroke="currentColor" strokeWidth="2" fill="#1e293b" />
+    <rect x="4" y="7" width="24" height="18" rx="4" stroke="currentColor" strokeWidth="2" fill="var(--k-gate-bubble)" />
     <circle cx="10" cy="16" r="3" fill="#22c55e" />
     <text x="18" y="19" fill="#38bdf8" fontSize="10" fontWeight="bold" fontFamily="monospace">HI</text>
   </svg>

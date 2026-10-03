@@ -2,11 +2,161 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Theme tokens. `data-theme` is written by the ThemeProvider before paint. */
+:root,
+[data-theme="light"] {
+  color-scheme: light;
+
+  --bg-app: #e8e8ec;
+  --bg-canvas: #f2f2f5;
+  --bg-header: #f7f7f9;
+  --bg-panel: #f0f0f3;
+  --bg-surface: #ffffff;
+  --bg-raised: #e6e6ea;
+  --bg-input: #ffffff;
+  --bg-sunken: #e0e0e5;
+  --border: rgba(0, 0, 0, 0.1);
+  --border-strong: rgba(0, 0, 0, 0.18);
+  --border-input: #c9c9d1;
+  --text: #1b1b1f;
+  --text-strong: #000000;
+  --text-muted: #55555f;
+  --text-faint: #6d6d7a;
+  --accent: #1a6fd4;
+  --accent-soft: rgba(26, 111, 212, 0.16);
+  --on-accent: #ffffff;
+  --hover: rgba(0, 0, 0, 0.06);
+  --press: rgba(0, 0, 0, 0.12);
+  --shadow: rgba(0, 0, 0, 0.18);
+  --danger: #c62828;
+  --danger-soft: rgba(198, 40, 40, 0.14);
+  --success: #1a7d44;
+  --accent-hover: #15539e;
+  --accent-text: #1a5fae;
+  --accent-cyan: #0369a1;
+  --success-text: #15803d;
+  --warn: #9c6200;
+  --bg-stripe: rgba(0, 0, 0, 0.02);
+  --icon-chip: #e6e6ea;
+  --icon-chip-hover: #dbeafe;
+
+  /* Konva drawing surface */
+  --k-grid-minor: #dcdce1;
+  --k-grid-major: #c6c6cd;
+  --k-grid-axis: #a8a8b2;
+  --k-canvas: #f2f2f5;
+  --k-gate-fill: #94a3b8;
+  --k-gate-bubble: #ffffff;
+  --k-gate-stroke: #334155;
+  --k-gate-stroke-hover: #0f172a;
+  --k-part-fill: #ffffff;
+  --k-part-fill-alt: #f1f5f9;
+  --k-part-stroke: #94a3b8;
+  --k-part-text: #475569;
+  --k-part-hi-fill: #dcfce7;
+  --k-hl: #0284c7;
+  --k-hl-dim: #64748b;
+  --k-knob: #334155;
+  --k-red: #dc2626;
+  --k-red-bright: #ef4444;
+  --k-green: #16a34a;
+  --k-green-bright: #22c55e;
+  --k-green-text: #14532d;
+  --k-numin-fill: #e0f2fe;
+  --k-numin-stroke: #0284c7;
+  --k-numin-label: #0369a1;
+  --k-numin-value: #0f172a;
+  --k-numout-fill: #dcfce7;
+  --k-numout-stroke: #16a34a;
+  --k-numout-label: #15803d;
+  --k-numout-value: #14532d;
+  --k-seg-off: #cbd5e1;
+  --k-wire-hi: #16a34a;
+  --k-wire-lo: #dc2626;
+  --k-wire-idle: #94a3b8;
+  --k-pin-hi: #16a34a;
+  --k-pin-lo: #b91c1c;
+  --k-pin-idle: #64748b;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg-app: #121212;
+  --bg-canvas: #121212;
+  --bg-header: #242424;
+  --bg-panel: #1e1e1e;
+  --bg-surface: #2c2c2c;
+  --bg-raised: #2e2e2e;
+  --bg-input: #2a2a2a;
+  --bg-sunken: #1a1a1a;
+  --border: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.16);
+  --border-input: #383838;
+  --text: #dedede;
+  --text-strong: #f1f1f1;
+  --text-muted: #a1a1aa;
+  --text-faint: #8a8a8e;
+  --accent: #3584e4;
+  --accent-soft: rgba(53, 132, 228, 0.2);
+  --on-accent: #ffffff;
+  --hover: rgba(255, 255, 255, 0.07);
+  --press: rgba(255, 255, 255, 0.12);
+  --shadow: rgba(0, 0, 0, 0.55);
+  --danger: #ef4444;
+  --danger-soft: rgba(239, 68, 68, 0.18);
+  --success: #26a269;
+  --accent-hover: #4a90e2;
+  --accent-text: #7cb7f5;
+  --accent-cyan: #38bdf8;
+  --success-text: #4ade80;
+  --warn: #e5a50a;
+  --bg-stripe: rgba(255, 255, 255, 0.02);
+  --icon-chip: #282828;
+  --icon-chip-hover: #2d3748;
+
+  --k-grid-minor: #1a1a1a;
+  --k-grid-major: #2a2a2a;
+  --k-grid-axis: #383838;
+  --k-canvas: #121212;
+  --k-gate-fill: #334155;
+  --k-gate-bubble: #1e293b;
+  --k-gate-stroke: #e2e8f0;
+  --k-gate-stroke-hover: #f1f5f9;
+  --k-part-fill: #18181b;
+  --k-part-fill-alt: #0f172a;
+  --k-part-stroke: #3f3f46;
+  --k-part-text: #71717a;
+  --k-part-hi-fill: #064e3b;
+  --k-hl: #38bdf8;
+  --k-hl-dim: #64748b;
+  --k-knob: #ffffff;
+  --k-red: #dc2626;
+  --k-red-bright: #ef4444;
+  --k-green: #15803d;
+  --k-green-bright: #22c55e;
+  --k-green-text: #4ade80;
+  --k-numin-fill: #12233b;
+  --k-numin-stroke: #3b6ea5;
+  --k-numin-label: #7dd3fc;
+  --k-numin-value: #e2e8f0;
+  --k-numout-fill: #0f2417;
+  --k-numout-stroke: #3f7a53;
+  --k-numout-label: #86efac;
+  --k-numout-value: #f0fdf4;
+  --k-seg-off: #2a2a2e;
+  --k-wire-hi: #22c55e;
+  --k-wire-lo: #7f1d1d;
+  --k-wire-idle: #475569;
+  --k-pin-hi: #22c55e;
+  --k-pin-lo: #7f1d1d;
+  --k-pin-idle: #334155;
+}
+
 :root {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Cantarell, "Ubuntu", "Helvetica Neue", sans-serif;
-  color-scheme: dark;
-  background-color: #121212;
-  color: #dedede;
+  background-color: var(--bg-app);
+  color: var(--text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -16,7 +166,9 @@ body {
   padding: 0;
   overflow: hidden;
   user-select: none;
-  background-color: #121212;
+  background-color: var(--bg-app);
+  color: var(--text);
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 /* Custom scrollbars inspired by GNOME / Adwaita */
@@ -30,19 +182,19 @@ body {
 }
 
 .scrollbar-thin::-webkit-scrollbar-thumb {
-  background: #383838;
+  background: var(--border-input);
   border-radius: 3px;
 }
 
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-  background: #484848;
+  background: var(--text-faint);
 }
 
 /* Range input styling for Libadwaita speed slider */
 input[type="range"] {
   -webkit-appearance: none;
   appearance: none;
-  background: #383838;
+  background: var(--border-input);
   border-radius: 9999px;
   outline: none;
 }
@@ -53,9 +205,9 @@ input[type="range"]::-webkit-slider-thumb {
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: #ffffff;
+  background: var(--bg-surface);
   cursor: pointer;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 1px 3px var(--shadow);
   transition: transform 0.1s ease;
 }
 

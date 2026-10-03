@@ -68,15 +68,15 @@ export const ComponentContextMenu: React.FC<ComponentContextMenuProps> = ({
         }
       }}
       style={style}
-      className="fixed z-[100] min-w-[196px] rounded-xl bg-[#2c2c2c]/98 border border-white/10 shadow-2xl backdrop-blur-md py-1 text-xs text-[#dedede] select-none"
+      className="fixed z-[100] min-w-[196px] rounded-xl bg-[var(--bg-surface)]/98 border border-[var(--border)] shadow-2xl backdrop-blur-md py-1 text-xs text-[var(--text)] select-none"
       onContextMenu={(e) => e.preventDefault()}
     >
-      <div className="px-3 py-1.5 text-[10px] uppercase tracking-wide font-semibold text-[#8b8b8b] border-b border-white/10 mb-1">
+      <div className="px-3 py-1.5 text-[10px] uppercase tracking-wide font-semibold text-[var(--text-faint)] border-b border-[var(--border)] mb-1">
         {title}
       </div>
 
       {sections.map((section, i) => (
-        <div key={i} className={i > 0 ? 'border-t border-white/10 mt-1 pt-1' : ''}>
+        <div key={i} className={i > 0 ? 'border-t border-[var(--border)] mt-1 pt-1' : ''}>
           {section.actions.map((action) => (
             <button
               key={action.id}
@@ -88,10 +88,10 @@ export const ComponentContextMenu: React.FC<ComponentContextMenuProps> = ({
               }}
               className={`w-full text-left px-3 py-1.5 flex items-center justify-between gap-6 transition-colors ${
                 action.disabled
-                  ? 'text-[#5a5a5a] cursor-not-allowed'
+                  ? 'text-[var(--text-faint)] cursor-not-allowed'
                   : action.danger
-                  ? 'text-red-400 hover:bg-red-500/15'
-                  : 'hover:bg-white/10 text-white'
+                  ? 'text-[var(--danger)] hover:bg-red-500/15'
+                  : 'hover:bg-[var(--hover)] text-[var(--text-strong)]'
               }`}
             >
               <span>{action.label}</span>

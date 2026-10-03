@@ -39,11 +39,11 @@ export const NumberPrompt: React.FC<NumberPromptProps> = ({
       onClick={onCancel}
     >
       <div
-        className="w-full max-w-[260px] bg-[#242424] border border-white/10 rounded-2xl shadow-2xl p-4"
+        className="w-full max-w-[260px] bg-[var(--bg-surface)] border border-[var(--border)] rounded-2xl shadow-2xl p-4"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-sm font-semibold text-[#ededed]">{title}</h2>
-        {description && <p className="text-[11px] text-[#8b8b8b] mt-1 mb-3">{description}</p>}
+        <h2 className="text-sm font-semibold text-[var(--text-strong)]">{title}</h2>
+        {description && <p className="text-[11px] text-[var(--text-faint)] mt-1 mb-3">{description}</p>}
 
         <input
           ref={inputRef}
@@ -56,19 +56,19 @@ export const NumberPrompt: React.FC<NumberPromptProps> = ({
             if (e.key === 'Enter') commit();
             if (e.key === 'Escape') onCancel();
           }}
-          className="w-full bg-[#1b1b1b] border border-white/10 focus:border-[#3584e4] outline-none rounded-lg px-2.5 py-1.5 text-[13px] font-mono text-[#ededed]"
+          className="w-full bg-[var(--bg-input)] border border-[var(--border)] focus:border-[var(--accent)] outline-none rounded-lg px-2.5 py-1.5 text-[13px] font-mono text-[var(--text-strong)]"
         />
 
         <div className="flex justify-end gap-2 mt-4">
           <button
             onClick={onCancel}
-            className="px-3 py-1.5 rounded-lg text-[12px] text-[#a1a1aa] hover:text-white hover:bg-white/10 transition-colors"
+            className="px-3 py-1.5 rounded-lg text-[12px] text-[var(--text-muted)] hover:text-[var(--text-strong)] hover:bg-[var(--hover)] transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={commit}
-            className="px-3 py-1.5 rounded-lg text-[12px] font-medium bg-[#3584e4] hover:bg-[#4a90e2] text-white transition-colors"
+            className="px-3 py-1.5 rounded-lg text-[12px] font-medium bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--text-strong)] transition-colors"
           >
             Set
           </button>

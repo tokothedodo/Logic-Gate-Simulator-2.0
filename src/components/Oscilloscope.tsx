@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { ScopeChannel, ScopeFrame } from '../engine/oscilloscope';
 import { CloseIcon } from './icons/AdwaitaIcons';
+import { useCanvasColors } from '../hooks/useCanvasColors';
 
 interface OscilloscopeProps {
   channels: ScopeChannel[];
@@ -30,6 +31,7 @@ export const Oscilloscope: React.FC<OscilloscopeProps> = ({
   onShowAll,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const c = useCanvasColors();
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -48,7 +50,7 @@ export const Oscilloscope: React.FC<OscilloscopeProps> = ({
     ctx.clearRect(0, 0, cssWidth, cssHeight);
 
     // Background
-    ctx.fillStyle = '#141414';
+    ctx.fillStyle = c.partFill;
     ctx.fillRect(0, 0, cssWidth, cssHeight);
 
     const laneCount = Math.max(channels.length, 1);
@@ -68,7 +70,7 @@ export const Oscilloscope: React.FC<OscilloscopeProps> = ({
     }
 
     if (channels.length === 0 || frame.times.length < 2) {
-      ctx.fillStyle = '#6b7280';
+      ctx.fillStyle = c.partText;
       ctx.font = '12px system-ui, sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText(
@@ -93,7 +95,7 @@ export const Oscilloscope: React.FC<OscilloscopeProps> = ({
       const lowY = top + laneHeight - 8;
 
       // Lane label
-      ctx.fillStyle = '#9ca3af';
+      ctx.fillStyle = c.partText;
       ctx.font = '10px system-ui, sans-serif';
       ctx.textAlign = 'left';
       ctx.fillText(truncate(channel.label, 22), 8, top + laneHeight / 2 + 3);
@@ -132,25 +134,25 @@ export const Oscilloscope: React.FC<OscilloscopeProps> = ({
 
       // Current level marker
       const lastValue = values[values.length - 1] ?? 0;
-      ctx.fillStyle = lastValue === 1 ? channel.color : '#4b5563';
+      ctx.fillStyle = lastValue === 1 ? channel.color : c.partStroke;
       ctx.beginPath();
       ctx.arc(LABEL_WIDTH + plotWidth + 8, lastValue === 1 ? highY : lowY, 3, 0, Math.PI * 2);
       ctx.fill();
     });
-  }, [channels, frame, isRunning]);
+  }, [channels, frame, isRunning, c]);
 
   return (
     <div
-      className={`w-[440px] max-w-[92vw] bg-[#1b1b1b]/97 border rounded-xl shadow-2xl backdrop-blur-md flex flex-col overflow-hidden ${
-        isPicking ? 'border-[#3584e4]' : 'border-white/10'
+      className={`w-[440px] max-w-[92vw] bg-[var(--bg-surface)] border rounded-xl shadow-2xl backdrop-blur-md flex flex-col overflow-hidden ${
+        isPicking ? 'border-[var(--accent)]' : 'border-[var(--border)]'
       }`}
     >
-      <div className="flex items-center justify-between px-3 py-1.5 border-b border-white/10 shrink-0">
+      <div className="flex items-center justify-between px-3 py-1.5 border-b border-[var(--border)] shrink-0">
         <div className="flex items-center gap-2 min-w-0">
-          <span className="text-[11px] font-bold uppercase tracking-wide text-[#dedede]">
+          <span className="text-[11px] font-bold uppercase tracking-wide text-[var(--text)]">
             Oscilloscope
           </span>
-          <span className="text-[10px] text-[#8b8b8b] truncate">
+          <span className="text-[10px] text-[var(--text-faint)] truncate">
             {isPicking
               ? 'click parts, then press Enter'
               : channels.length === 0
@@ -166,8 +168,8 @@ export const Oscilloscope: React.FC<OscilloscopeProps> = ({
             onClick={onTogglePicking}
             className={`px-2 py-0.5 rounded-md text-[11px] transition-colors ${
               isPicking
-                ? 'bg-[#3584e4] text-white'
-                : 'text-[#a1a1aa] hover:text-white hover:bg-white/10'
+                ? 'bg-[var(--accent)] text-[var(--text-strong)]'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-strong)] hover:bg-[var(--hover)]'
             }`}
             title="Pick which wires the scope records (Enter to apply)"
           >
@@ -176,7 +178,7 @@ export const Oscilloscope: React.FC<OscilloscopeProps> = ({
           {hasPinnedChannels && (
             <button
               onClick={onShowAll}
-              className="px-2 py-0.5 rounded-md text-[11px] text-[#a1a1aa] hover:text-white hover:bg-white/10 transition-colors"
+              className="px-2 py-0.5 rounded-md text-[11px] text-[var(--text-muted)] hover:text-[var(--text-strong)] hover:bg-[var(--hover)] transition-colors"
               title="Record every wire again"
             >
               All
@@ -184,14 +186,14 @@ export const Oscilloscope: React.FC<OscilloscopeProps> = ({
           )}
           <button
             onClick={onClear}
-            className="px-2 py-0.5 rounded-md text-[11px] text-[#a1a1aa] hover:text-white hover:bg-white/10 transition-colors"
+            className="px-2 py-0.5 rounded-md text-[11px] text-[var(--text-muted)] hover:text-[var(--text-strong)] hover:bg-[var(--hover)] transition-colors"
             title="Clear captured trace"
           >
             Clear
           </button>
           <button
             onClick={onClose}
-            className="p-1 rounded-md text-[#a1a1aa] hover:text-white hover:bg-white/10 transition-colors"
+            className="p-1 rounded-md text-[var(--text-muted)] hover:text-[var(--text-strong)] hover:bg-[var(--hover)] transition-colors"
             title="Close oscilloscope"
           >
             <CloseIcon size={12} />

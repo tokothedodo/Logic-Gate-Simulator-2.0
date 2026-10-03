@@ -30,14 +30,14 @@ export const TruthTablePanel: React.FC<TruthTablePanelProps> = ({
     <div className="fixed inset-0 z-[90] flex items-center justify-center p-6">
       <div className="absolute inset-0 bg-black/55" onClick={onClose} />
 
-      <div className="relative w-full max-w-2xl max-h-[80vh] bg-[#242424]/98 border border-white/10 rounded-2xl shadow-2xl backdrop-blur-md flex flex-col overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/10 shrink-0">
+      <div className="relative w-full max-w-2xl max-h-[80vh] bg-[var(--bg-surface)]/98 border border-[var(--border)] rounded-2xl shadow-2xl backdrop-blur-md flex flex-col overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-2.5 border-b border-[var(--border)] shrink-0">
           <div className="flex items-center gap-2 min-w-0">
-            <span className="text-xs font-bold uppercase tracking-wide text-[#dedede]">
+            <span className="text-xs font-bold uppercase tracking-wide text-[var(--text)]">
               Truth Table
             </span>
             {table && (
-              <span className="text-[11px] text-[#8b8b8b] truncate">
+              <span className="text-[11px] text-[var(--text-faint)] truncate">
                 {targetCount === 0 ? 'Whole circuit' : `${targetCount} part${targetCount === 1 ? '' : 's'}`}{' '}
                 · {table.rows.length} rows
               </span>
@@ -50,8 +50,8 @@ export const TruthTablePanel: React.FC<TruthTablePanelProps> = ({
               title="Click parts on the canvas to choose which ones to tabulate, then press Enter"
               className={`px-2 py-1 rounded-md text-[11px] transition-colors ${
                 isPicking
-                  ? 'bg-[#3584e4]/25 text-[#7cb7f5]'
-                  : 'text-[#a1a1aa] hover:text-white hover:bg-white/10'
+                  ? 'bg-[var(--accent-soft)] text-[var(--accent-text)]'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-strong)] hover:bg-[var(--hover)]'
               }`}
             >
               {isPicking ? 'Keep these (Enter)' : 'Pick parts'}
@@ -59,13 +59,13 @@ export const TruthTablePanel: React.FC<TruthTablePanelProps> = ({
             <button
               onClick={onShowAll}
               title="Tabulate every part in the circuit"
-              className="px-2 py-1 rounded-md text-[11px] text-[#a1a1aa] hover:text-white hover:bg-white/10 transition-colors"
+              className="px-2 py-1 rounded-md text-[11px] text-[var(--text-muted)] hover:text-[var(--text-strong)] hover:bg-[var(--hover)] transition-colors"
             >
               All
             </button>
             <button
               onClick={onClose}
-              className="p-1 rounded-md text-[#a1a1aa] hover:text-white hover:bg-white/10 transition-colors"
+              className="p-1 rounded-md text-[var(--text-muted)] hover:text-[var(--text-strong)] hover:bg-[var(--hover)] transition-colors"
               title="Close truth table"
             >
               <CloseIcon size={13} />
@@ -74,14 +74,14 @@ export const TruthTablePanel: React.FC<TruthTablePanelProps> = ({
         </div>
 
         {isPicking && (
-          <div className="px-4 py-2 text-[11px] text-[#7cb7f5] bg-[#3584e4]/10 border-b border-white/10 shrink-0">
+          <div className="px-4 py-2 text-[11px] text-[var(--accent-text)] bg-[var(--accent-soft)] border-b border-[var(--border)] shrink-0">
             Click parts on the canvas to add or remove them, Enter to keep them, Escape to cancel.
           </div>
         )}
 
         <div className="overflow-auto p-3">
           {!table && (
-            <p className="text-xs text-[#a1a1aa] py-6 text-center">
+            <p className="text-xs text-[var(--text-muted)] py-6 text-center">
               {reason ?? 'Nothing to tabulate yet. Add a gate or a part to the circuit.'}
             </p>
           )}
@@ -94,7 +94,7 @@ export const TruthTablePanel: React.FC<TruthTablePanelProps> = ({
                     {table.inputs.map((col) => (
                       <th
                         key={col.key}
-                        className="px-2.5 py-1.5 text-left font-sans font-semibold text-[#9ca3af] border-b border-white/10 whitespace-nowrap"
+                        className="px-2.5 py-1.5 text-left font-sans font-semibold text-[var(--text-faint)] border-b border-[var(--border)] whitespace-nowrap"
                       >
                         {col.label}
                       </th>
@@ -102,7 +102,7 @@ export const TruthTablePanel: React.FC<TruthTablePanelProps> = ({
                     {table.outputs.map((col) => (
                       <th
                         key={col.key}
-                        className="px-2.5 py-1.5 text-left font-sans font-bold text-[#4ade80] border-b border-white/10 whitespace-nowrap"
+                        className="px-2.5 py-1.5 text-left font-sans font-bold text-[var(--success-text)] border-b border-[var(--border)] whitespace-nowrap"
                       >
                         {col.label}
                       </th>
@@ -113,17 +113,17 @@ export const TruthTablePanel: React.FC<TruthTablePanelProps> = ({
                   {table.rows.map((row, rowIndex) => (
                     <tr
                       key={rowIndex}
-                      className={rowIndex % 2 === 0 ? 'bg-white/[0.02]' : ''}
+                      className={rowIndex % 2 === 0 ? 'bg-[var(--bg-stripe)]' : ''}
                     >
                       {row.map((value, colIndex) => (
                         <td
                           key={colIndex}
                           className={`px-2.5 py-1 ${
                             colIndex === highlightCol
-                              ? 'text-[#4ade80] font-semibold'
+                              ? 'text-[var(--success-text)] font-semibold'
                               : value === 1
-                              ? 'text-[#e5e7eb]'
-                              : 'text-[#6b7280]'
+                              ? 'text-[var(--text)]'
+                              : 'text-[var(--text-faint)]'
                           }`}
                         >
                           {value}
@@ -134,7 +134,7 @@ export const TruthTablePanel: React.FC<TruthTablePanelProps> = ({
                 </tbody>
               </table>
 
-              <div className="mt-3 text-[10px] text-[#6b7280] space-y-0.5">
+              <div className="mt-3 text-[10px] text-[var(--text-faint)] space-y-0.5">
                 {table.freeInputCount > 0 && (
                   <p>
                     Unconnected inputs are treated as free variables (

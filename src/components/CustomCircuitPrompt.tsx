@@ -37,11 +37,11 @@ export const CustomCircuitPrompt: React.FC<CustomCircuitPromptProps> = ({
       onClick={onCancel}
     >
       <div
-        className="w-full max-w-sm bg-[#242424] border border-white/10 rounded-2xl shadow-2xl p-4"
+        className="w-full max-w-sm bg-[var(--bg-surface)] border border-[var(--border)] rounded-2xl shadow-2xl p-4"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-sm font-semibold text-[#ededed]">Create custom circuit</h2>
-        <p className="text-[11px] text-[#8b8b8b] mt-1 mb-3">
+        <h2 className="text-sm font-semibold text-[var(--text-strong)]">Create custom circuit</h2>
+        <p className="text-[11px] text-[var(--text-faint)] mt-1 mb-3">
           Bundles {itemCount} selected items into one part and adds it to the Custom
           section of the sidebar.
         </p>
@@ -58,20 +58,20 @@ export const CustomCircuitPrompt: React.FC<CustomCircuitPromptProps> = ({
             if (e.key === 'Escape') onCancel();
           }}
           placeholder="Circuit name"
-          className="w-full bg-[#1b1b1b] border border-white/10 focus:border-[#3584e4] outline-none rounded-lg px-2.5 py-1.5 text-[13px] text-[#ededed] placeholder:text-[#5f5f63]"
+          className="w-full bg-[var(--bg-input)] border border-[var(--border)] focus:border-[var(--accent)] outline-none rounded-lg px-2.5 py-1.5 text-[13px] text-[var(--text-strong)] placeholder:text-[var(--text-faint)]"
         />
-        {error && <p className="text-[11px] text-red-400 mt-1.5">{error}</p>}
+        {error && <p className="text-[11px] text-[var(--danger)] mt-1.5">{error}</p>}
 
         <div className="flex justify-end gap-2 mt-4">
           <button
             onClick={onCancel}
-            className="px-3 py-1.5 rounded-lg text-[12px] text-[#a1a1aa] hover:text-white hover:bg-white/10 transition-colors"
+            className="px-3 py-1.5 rounded-lg text-[12px] text-[var(--text-muted)] hover:text-[var(--text-strong)] hover:bg-[var(--hover)] transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={submit}
-            className="px-3 py-1.5 rounded-lg text-[12px] font-medium bg-[#3584e4] hover:bg-[#4a90e2] text-white transition-colors"
+            className="px-3 py-1.5 rounded-lg text-[12px] font-medium bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--text-strong)] transition-colors"
           >
             Create
           </button>

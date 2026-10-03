@@ -1,6 +1,7 @@
 import React from 'react';
 import { Path, Group } from 'react-konva';
 import { Point } from '../types';
+import { useCanvasColors } from '../hooks/useCanvasColors';
 
 export type WireRoutingStyle = 'bezier' | 'orthogonal';
 
@@ -43,6 +44,8 @@ export const Wire: React.FC<WireProps> = ({
   routingStyle = 'bezier',
   onClick,
 }) => {
+  const c = useCanvasColors();
+
   if (points.length < 2) return null;
 
   const p1 = points[0];
@@ -55,12 +58,12 @@ export const Wire: React.FC<WireProps> = ({
   const isHigh = state === 1;
 
   const activeColor = isBlocked
-    ? '#ef4444'
+    ? c.redBright
     : isSelected
-    ? '#38bdf8'
+    ? c.hl
     : isHigh
-    ? '#22c55e'
-    : '#475569';
+    ? c.greenBright
+    : c.wireIdle;
   const strokeWidth = isSelected || isBlocked ? 3 : isHigh ? 2.5 : 2;
 
   return (

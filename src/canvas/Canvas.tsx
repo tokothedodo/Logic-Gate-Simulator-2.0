@@ -51,6 +51,7 @@ import { NumberPrompt } from '../components/NumberPrompt';
 import { deriveScopeChannels, wiresForComponents } from '../engine/oscilloscope';
 import { generateTruthTable } from '../engine/truthTable';
 import { useOscilloscope } from '../hooks/useOscilloscope';
+import { useCanvasColors } from '../hooks/useCanvasColors';
 import { TableIcon } from '../components/icons/AdwaitaIcons';
 
 const GRID_SIZE = 20;
@@ -267,6 +268,8 @@ export const Canvas: React.FC = () => {
     scopeWireIds,
     scopeResetKey,
   ]);
+
+  const canvasColors = useCanvasColors();
 
   const scopeFrame = useOscilloscope({
     channelIds: scopeChannels.map((c) => c.id),
@@ -1524,7 +1527,7 @@ export const Canvas: React.FC = () => {
   const isStageDraggable = canvasMode === 'pan' && !isDrawingWire;
 
   return (
-    <div className="w-full h-screen flex flex-col bg-[#121212] overflow-hidden select-none">
+    <div className="w-full h-screen flex flex-col bg-[var(--bg-canvas)] overflow-hidden select-none">
       {/* 1. GNOME / Libadwaita HeaderBar */}
       <HeaderBar
         isSidebarOpen={isSidebarOpen}
@@ -1594,7 +1597,7 @@ export const Canvas: React.FC = () => {
         {/* 3. Konva Canvas Area */}
         <div
           ref={containerRef}
-          className={`flex-1 h-full min-w-0 min-h-0 bg-[#121212] relative overflow-hidden focus:outline-none ${
+          className={`flex-1 h-full min-w-0 min-h-0 bg-[var(--bg-canvas)] relative overflow-hidden focus:outline-none ${
             canvasMode === 'pan' ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'
           }`}
           tabIndex={0}
@@ -1627,7 +1630,7 @@ export const Canvas: React.FC = () => {
                 height={100000}
                 x={-50000}
                 y={-50000}
-                fill="#121212"
+                fill={canvasColors.canvas}
               />
 
               {/* Dynamic Viewport Grid (Dots or Lines) */}
@@ -1723,8 +1726,9 @@ export const Canvas: React.FC = () => {
                   y={marqueeRect.y}
                   width={marqueeRect.width}
                   height={marqueeRect.height}
-                  fill="rgba(53, 132, 228, 0.12)"
-                  stroke="#3584e4"
+                  fill={canvasColors.hl}
+                  opacity={0.12}
+                  stroke={canvasColors.hl}
                   strokeWidth={1.5}
                   dash={[5, 4]}
                   cornerRadius={2}
@@ -1736,12 +1740,12 @@ export const Canvas: React.FC = () => {
 
           {/* Canvas Floating Overlay: Active Wire Drawing Help Banner */}
           {isDrawingWire && (
-            <div className="absolute bottom-3 left-3 bg-[#282828]/95 border border-[#3584e4]/40 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-full shadow-2xl backdrop-blur-md flex items-center gap-2 sm:gap-3 text-xs z-30 pointer-events-none max-w-[60vw] truncate">
-              <span className="w-2 h-2 rounded-full bg-[#3584e4] animate-ping shrink-0" />
+            <div className="absolute bottom-3 left-3 bg-[var(--bg-surface)] border border-[var(--accent-soft)] text-[var(--text-strong)] px-3 sm:px-4 py-1.5 sm:py-2 rounded-full shadow-2xl backdrop-blur-md flex items-center gap-2 sm:gap-3 text-xs z-30 pointer-events-none max-w-[60vw] truncate">
+              <span className="w-2 h-2 rounded-full bg-[var(--accent)] animate-ping shrink-0" />
               <span className="truncate">
                 Click an <strong>input pin</strong> to connect, or click empty space to cancel
               </span>
-              <span className="bg-white/10 px-1.5 py-0.5 rounded text-[10px] text-gray-300 font-mono shrink-0">
+              <span className="bg-[var(--hover)] px-1.5 py-0.5 rounded text-[10px] text-[var(--text-muted)] font-mono shrink-0">
                 ESC
               </span>
             </div>
@@ -1751,7 +1755,7 @@ export const Canvas: React.FC = () => {
           <div className="absolute bottom-3 right-3 z-30 flex flex-col-reverse items-end gap-2 pointer-events-none">
             <button
               onClick={openTruthTable}
-              className="pointer-events-auto flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#282828]/95 border border-white/10 text-[#dedede] text-xs shadow-xl backdrop-blur-md hover:text-white hover:bg-[#333] transition-colors"
+              className="pointer-events-auto flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border)] text-[var(--text)] text-xs shadow-xl backdrop-blur-md hover:text-[var(--text-strong)] hover:bg-[var(--press)] transition-colors"
               title="Truth table for the selection, or the whole circuit"
             >
               <TableIcon size={13} />
@@ -1780,8 +1784,8 @@ export const Canvas: React.FC = () => {
 
           {/* Canvas Floating Overlay: Multiple Selected Items Information & Action */}
           {(selectedCompIds.length > 0 || selectedConnId) && !isDrawingWire && (
-            <div className="absolute bottom-3 left-3 bg-[#282828]/95 border border-white/10 text-white px-3.5 py-2 rounded-xl shadow-2xl backdrop-blur-md flex items-center gap-3 text-xs z-30 max-w-[60vw]">
-              <span className="text-[#a1a1aa] font-medium truncate">
+            <div className="absolute bottom-3 left-3 bg-[var(--bg-surface)] border border-[var(--border)] text-[var(--text-strong)] px-3.5 py-2 rounded-xl shadow-2xl backdrop-blur-md flex items-center gap-3 text-xs z-30 max-w-[60vw]">
+              <span className="text-[var(--text-muted)] font-medium truncate">
                 {selectedCompIds.length > 1
                   ? `${selectedCompIds.length} components selected`
                   : selectedCompIds.length === 1
@@ -1793,7 +1797,7 @@ export const Canvas: React.FC = () => {
                   if (selectedCompIds.length > 0) deleteSelectedComponents();
                   if (selectedConnId) deleteConnection(selectedConnId);
                 }}
-                className="bg-red-500/20 hover:bg-red-500/30 text-red-400 px-2 py-1 rounded-md text-xs font-medium transition-colors shrink-0"
+                className="bg-[var(--danger-soft)] hover:opacity-80 text-[var(--danger)] px-2 py-1 rounded-md text-xs font-medium transition-colors shrink-0"
               >
                 Delete (Del)
               </button>
@@ -1927,19 +1931,19 @@ export const Canvas: React.FC = () => {
         })()}
 
       {pinNotice && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[95] px-3 py-1.5 rounded-lg bg-[#2a2a2a]/98 border border-white/10 text-[11px] text-[#dedede] shadow-xl">
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[95] px-3 py-1.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border)] text-[11px] text-[var(--text)] shadow-xl">
           {pinNotice.text}
         </div>
       )}
 
       {formatNotice && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[95] max-w-md px-3 py-2 rounded-lg bg-[#2a2a2a]/98 border border-amber-500/40 text-[11px] leading-relaxed text-[#dedede] shadow-xl">
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[95] max-w-md px-3 py-2 rounded-lg bg-[var(--bg-surface)] border border-amber-500/40 text-[11px] leading-relaxed text-[var(--text)] shadow-xl">
           <div className="flex items-start gap-2">
             <span className="flex-1">{formatNotice}</span>
             <button
               type="button"
               onClick={() => setFormatNotice(null)}
-              className="shrink-0 px-1 text-[#9a9a9a] hover:text-white"
+              className="shrink-0 px-1 text-[var(--text-faint)] hover:text-[var(--text-strong)]"
               aria-label="Dismiss"
             >
               ✕
@@ -2009,10 +2013,10 @@ export const Canvas: React.FC = () => {
       {/* Floating Drag Ghost while dragging seamlessly from sidebar into the workplace */}
       {pointerDrag && (
         <div
-          className="fixed pointer-events-none z-50 transform -translate-x-1/2 -translate-y-1/2 bg-[#282828]/95 border border-[#3584e4] rounded-xl shadow-2xl p-2.5 flex items-center gap-3 text-white backdrop-blur-md ring-2 ring-[#3584e4]/30"
+          className="fixed pointer-events-none z-50 transform -translate-x-1/2 -translate-y-1/2 bg-[var(--bg-surface)] border border-[var(--accent)] rounded-xl shadow-2xl p-2.5 flex items-center gap-3 text-[var(--text-strong)] backdrop-blur-md ring-2 ring-[var(--accent-soft)]"
           style={{ left: pointerDrag.x, top: pointerDrag.y }}
         >
-          <div className="w-8 h-8 rounded-lg bg-[#1e1e1e] flex items-center justify-center text-[#38bdf8] border border-white/10">
+          <div className="w-8 h-8 rounded-lg bg-[var(--bg-sunken)] flex items-center justify-center text-[var(--accent-cyan)] border border-[var(--border)]">
             {getComponentIcon(pointerDrag.type, { size: 22 })}
           </div>
           <div className="flex flex-col pr-1">
@@ -2020,7 +2024,7 @@ export const Canvas: React.FC = () => {
               {componentLibrary.find((c) => c.type === pointerDrag.type)?.label ||
                 pointerDrag.type.toUpperCase()}
             </span>
-            <span className="text-[10px] text-[#3584e4] font-mono">Release to place</span>
+            <span className="text-[10px] text-[var(--accent)] font-mono">Release to place</span>
           </div>
         </div>
       )}

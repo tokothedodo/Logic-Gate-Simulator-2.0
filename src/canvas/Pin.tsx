@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Circle, Group, Text } from 'react-konva';
+import { useCanvasColors } from '../hooks/useCanvasColors';
 
 interface PinProps {
   x: number;
@@ -27,6 +28,7 @@ export const Pin: React.FC<PinProps> = ({
   onHover,
 }) => {
   const [isHovered, setIsHovered] = useState(false);
+  const c = useCanvasColors();
   const isHigh = state === 1;
 
   // While a wire is in hand, inputs that already have one are shown as taken
@@ -35,22 +37,22 @@ export const Pin: React.FC<PinProps> = ({
   const radius = isHovered ? 7 : isTarget || isBlocked ? 6.5 : 5.5;
 
   const pinFill = isBlocked
-    ? '#7f1d1d'
+    ? c.pinLo
     : isHigh
-    ? '#22c55e'
+    ? c.pinHi
     : isTarget
-    ? '#38bdf8'
-    : '#334155';
+    ? c.hl
+    : c.pinIdle;
 
   const pinStroke = isBlocked
-    ? '#ef4444'
+    ? c.redBright
     : isSelected
-    ? '#38bdf8'
+    ? c.hl
     : isHigh
-    ? '#86efac'
+    ? c.greenBright
     : isTarget
-    ? '#7dd3fc'
-    : '#64748b';
+    ? c.hl
+    : c.pinIdle;
 
   return (
     <Group
@@ -72,7 +74,7 @@ export const Pin: React.FC<PinProps> = ({
           x={x}
           y={y}
           radius={11}
-          stroke="#38bdf8"
+          stroke={c.hl}
           strokeWidth={1.5}
           dash={[3, 3]}
           opacity={0.7}
@@ -88,7 +90,7 @@ export const Pin: React.FC<PinProps> = ({
       />
 
       {isBlocked && (
-        <Circle x={x} y={y} radius={11} stroke="#ef4444" strokeWidth={1.5} opacity={0.55} />
+        <Circle x={x} y={y} radius={11} stroke={c.redBright} strokeWidth={1.5} opacity={0.55} />
       )}
 
       {/* Main Pin Circle */}
@@ -105,7 +107,7 @@ export const Pin: React.FC<PinProps> = ({
       {name && (
         <Text
           text={name}
-          fill={isHovered ? '#ffffff' : '#94a3b8'}
+          fill={isHovered ? c.knob : c.pinIdle}
           fontSize={9}
           fontFamily="system-ui, sans-serif"
           fontStyle="bold"

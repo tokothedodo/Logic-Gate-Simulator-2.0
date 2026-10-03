@@ -1,5 +1,6 @@
 import React from 'react';
 import { Group, Line, Circle } from 'react-konva';
+import { useCanvasColors } from '../hooks/useCanvasColors';
 
 interface GridProps {
   stageWidth: number;
@@ -20,6 +21,8 @@ export const Grid: React.FC<GridProps> = ({
   gridSize = 20,
   style = 'dots',
 }) => {
+  const c = useCanvasColors();
+
   // Compute visible viewport in world coordinates
   const minX = Math.floor((-stageX) / (scale * gridSize)) * gridSize - gridSize * 2;
   const maxX = Math.ceil((-stageX + stageWidth) / (scale * gridSize)) * gridSize + gridSize * 2;
@@ -36,7 +39,7 @@ export const Grid: React.FC<GridProps> = ({
         <Line
           key={`v-${x}`}
           points={[x, minY, x, maxY]}
-          stroke={isMajor ? '#2a2a2a' : '#1a1a1a'}
+          stroke={isMajor ? c.gridMajor : c.gridMinor}
           strokeWidth={1}
           listening={false}
         />
@@ -50,7 +53,7 @@ export const Grid: React.FC<GridProps> = ({
         <Line
           key={`h-${y}`}
           points={[minX, y, maxX, y]}
-          stroke={isMajor ? '#2a2a2a' : '#1a1a1a'}
+          stroke={isMajor ? c.gridMajor : c.gridMinor}
           strokeWidth={1}
           listening={false}
         />
@@ -72,7 +75,7 @@ export const Grid: React.FC<GridProps> = ({
           x={x}
           y={y}
           radius={isMajor ? 1.5 : 1}
-          fill={isMajor ? '#383838' : '#222222'}
+          fill={isMajor ? c.gridMajor : c.gridMinor}
           listening={false}
         />
       );

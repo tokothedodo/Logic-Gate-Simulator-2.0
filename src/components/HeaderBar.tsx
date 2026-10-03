@@ -19,6 +19,7 @@ import {
   TrashIcon,
 } from './icons/AdwaitaIcons';
 import { sampleCircuits, SampleCircuit } from './SampleCircuits';
+import { ThemePicker } from './ThemePicker';
 import { WireRoutingStyle } from '../canvas/Wire';
 
 interface HeaderBarProps {
@@ -121,7 +122,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   };
 
   return (
-    <header className="h-12 bg-[#242424] border-b border-[#1c1c1c] px-1.5 sm:px-3 flex items-center justify-between select-none text-[#dedede] z-20 shrink-0 w-full min-w-0 gap-1 sm:gap-2 overflow-hidden">
+    <header className="h-12 bg-[var(--bg-header)] border-b border-[var(--border)] px-1.5 sm:px-3 flex items-center justify-between select-none text-[var(--text)] z-40 shrink-0 w-full min-w-0 gap-1 sm:gap-2">
       {/* Hidden file input for Open dialog */}
       <input
         ref={fileInputRef}
@@ -136,10 +137,10 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
         {/* Sidebar Toggle Button */}
         <button
           onClick={onToggleSidebar}
-          className={`p-1.5 rounded-lg border border-white/10 transition-colors ${
+          className={`p-1.5 rounded-lg border border-[var(--border)] transition-colors ${
             isSidebarOpen
-              ? 'bg-white/15 text-white'
-              : 'bg-[#2e2e2e] text-[#8a8a8e] hover:text-white hover:bg-white/10'
+              ? 'bg-[var(--press)] text-[var(--text-strong)]'
+              : 'bg-[var(--bg-raised)] text-[var(--text-faint)] hover:text-[var(--text-strong)] hover:bg-[var(--hover)]'
           }`}
           title="Toggle Component Library (F9)"
         >
@@ -147,44 +148,44 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
         </button>
 
         {/* Adwaita Linked Button Group: Open, Save, Export */}
-        <div className="inline-flex rounded-lg bg-[#2e2e2e] border border-white/10 p-0.5 shadow-sm">
+        <div className="inline-flex rounded-lg bg-[var(--bg-raised)] border border-[var(--border)] p-0.5 shadow-sm">
           <button
             onClick={onOpenNative}
-            className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-[#dedede] hover:text-white hover:bg-white/10 active:bg-white/15 rounded-md transition-colors"
+            className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-[var(--text)] hover:text-[var(--text-strong)] hover:bg-[var(--hover)] active:bg-[var(--press)] rounded-md transition-colors"
             title="Open circuit (.json, .gcg, .circ)"
           >
-            <FolderOpenIcon size={13} className="text-[#3584e4]" />
+            <FolderOpenIcon size={13} className="text-[var(--accent)]" />
             <span className="hidden lg:inline">Open</span>
           </button>
 
           <button
             onClick={onSave}
-            className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-[#dedede] hover:text-white hover:bg-white/10 active:bg-white/15 rounded-md transition-colors"
+            className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-[var(--text)] hover:text-[var(--text-strong)] hover:bg-[var(--hover)] active:bg-[var(--press)] rounded-md transition-colors"
             title="Save circuit (.json)"
           >
-            <SaveIcon size={13} className="text-[#26a269]" />
+            <SaveIcon size={13} className="text-[var(--success)]" />
             <span className="hidden lg:inline">Save</span>
           </button>
 
           <div className="relative" ref={exportRef}>
             <button
               onClick={() => setShowExportMenu(!showExportMenu)}
-              className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-[#dedede] hover:text-white hover:bg-white/10 active:bg-white/15 rounded-md transition-colors"
+              className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-[var(--text)] hover:text-[var(--text-strong)] hover:bg-[var(--hover)] active:bg-[var(--press)] rounded-md transition-colors"
               title="Export circuit"
             >
-              <ExportIcon size={13} className="text-[#e5a50a]" />
+              <ExportIcon size={13} className="text-[var(--warn)]" />
               <span className="hidden lg:inline">Export</span>
             </button>
 
             {/* Export Menu Dropdown */}
             {showExportMenu && (
-              <div className="absolute left-0 top-full mt-1.5 w-44 bg-[#2c2c2c] border border-white/10 rounded-xl shadow-2xl p-1 z-50 text-xs">
+              <div className="absolute left-0 top-full mt-1.5 w-44 bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl shadow-2xl p-1 z-50 text-xs">
                 <button
                   onClick={() => {
                     onExport('json');
                     setShowExportMenu(false);
                   }}
-                  className="w-full text-left px-3 py-1.5 rounded-lg hover:bg-white/10 text-white flex items-center justify-between"
+                  className="w-full text-left px-3 py-1.5 rounded-lg hover:bg-[var(--hover)] text-[var(--text-strong)] flex items-center justify-between"
                 >
                   <span>Native JSON (.json)</span>
                 </button>
@@ -193,7 +194,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                     onExport('png');
                     setShowExportMenu(false);
                   }}
-                  className="w-full text-left px-3 py-1.5 rounded-lg hover:bg-white/10 text-white flex items-center justify-between"
+                  className="w-full text-left px-3 py-1.5 rounded-lg hover:bg-[var(--hover)] text-[var(--text-strong)] flex items-center justify-between"
                 >
                   <span>Export Image (.png)</span>
                 </button>
@@ -202,7 +203,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                     onExport('circ');
                     setShowExportMenu(false);
                   }}
-                  className="w-full text-left px-3 py-1.5 rounded-lg hover:bg-white/10 text-white flex items-center justify-between"
+                  className="w-full text-left px-3 py-1.5 rounded-lg hover:bg-[var(--hover)] text-[var(--text-strong)] flex items-center justify-between"
                 >
                   <span>Logisim (.circ)</span>
                 </button>
@@ -211,7 +212,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                     onExport('gcg');
                     setShowExportMenu(false);
                   }}
-                  className="w-full text-left px-3 py-1.5 rounded-lg hover:bg-white/10 text-white flex items-center justify-between"
+                  className="w-full text-left px-3 py-1.5 rounded-lg hover:bg-[var(--hover)] text-[var(--text-strong)] flex items-center justify-between"
                 >
                   <span>Gate Simulator (.gcg)</span>
                 </button>
@@ -224,13 +225,13 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
       {/* CENTER SECTION: Viewport Zoom Controls, Canvas Mode & GNOME Simulation Switch */}
       <div className="flex items-center gap-1 sm:gap-2.5 min-w-0 shrink overflow-hidden">
         {/* Canvas Mode Toggle: Select vs Pan */}
-        <div className="inline-flex items-center rounded-lg bg-[#2e2e2e] border border-white/10 p-0.5 shadow-sm">
+        <div className="inline-flex items-center rounded-lg bg-[var(--bg-raised)] border border-[var(--border)] p-0.5 shadow-sm">
           <button
             onClick={() => onChangeCanvasMode('select')}
             className={`flex items-center gap-1 px-2 py-1 text-xs rounded-md transition-colors ${
               canvasMode === 'select'
-                ? 'bg-[#3584e4] text-white shadow-sm font-medium'
-                : 'text-[#a1a1aa] hover:text-white hover:bg-white/10'
+                ? 'bg-[var(--accent)] text-[var(--text-strong)] shadow-sm font-medium'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-strong)] hover:bg-[var(--hover)]'
             }`}
             title="Select & Marquee Mode (V)"
           >
@@ -242,8 +243,8 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
             onClick={() => onChangeCanvasMode('pan')}
             className={`flex items-center gap-1 px-2 py-1 text-xs rounded-md transition-colors ${
               canvasMode === 'pan'
-                ? 'bg-[#3584e4] text-white shadow-sm font-medium'
-                : 'text-[#a1a1aa] hover:text-white hover:bg-white/10'
+                ? 'bg-[var(--accent)] text-[var(--text-strong)] shadow-sm font-medium'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-strong)] hover:bg-[var(--hover)]'
             }`}
             title="Drag / Pan Canvas Mode (H)"
           >
@@ -253,10 +254,10 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
         </div>
 
         {/* Linked Zoom Controls */}
-        <div className="inline-flex items-center rounded-lg bg-[#2e2e2e] border border-white/10 p-0.5 shadow-sm">
+        <div className="inline-flex items-center rounded-lg bg-[var(--bg-raised)] border border-[var(--border)] p-0.5 shadow-sm">
           <button
             onClick={onZoomOut}
-            className="p-1 sm:p-1.5 text-xs text-[#dedede] hover:text-white hover:bg-white/10 active:bg-white/15 rounded-md transition-colors"
+            className="p-1 sm:p-1.5 text-xs text-[var(--text)] hover:text-[var(--text-strong)] hover:bg-[var(--hover)] active:bg-[var(--press)] rounded-md transition-colors"
             title="Zoom Out (Ctrl -)"
           >
             <ZoomOutIcon size={13} />
@@ -264,7 +265,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
 
           <button
             onClick={onResetZoom}
-            className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-[11px] font-mono font-medium text-[#dedede] hover:text-white hover:bg-white/10 active:bg-white/15 rounded-md transition-colors"
+            className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-[11px] font-mono font-medium text-[var(--text)] hover:text-[var(--text-strong)] hover:bg-[var(--hover)] active:bg-[var(--press)] rounded-md transition-colors"
             title="Reset Zoom to 100%"
           >
             {Math.round(scale * 100)}%
@@ -272,7 +273,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
 
           <button
             onClick={onZoomIn}
-            className="p-1 sm:p-1.5 text-xs text-[#dedede] hover:text-white hover:bg-white/10 active:bg-white/15 rounded-md transition-colors"
+            className="p-1 sm:p-1.5 text-xs text-[var(--text)] hover:text-[var(--text-strong)] hover:bg-[var(--hover)] active:bg-[var(--press)] rounded-md transition-colors"
             title="Zoom In (Ctrl +)"
           >
             <ZoomInIcon size={13} />
@@ -280,18 +281,18 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
         </div>
 
         {/* Divider */}
-        <div className="hidden sm:block h-4 w-[1px] bg-white/10" />
+        <div className="hidden sm:block h-4 w-[1px] bg-[var(--hover)]" />
 
         {/* GNOME Adwaita Simulation Switch & Controls */}
-        <div className="flex items-center gap-1.5 bg-[#2e2e2e] border border-white/10 rounded-full px-2 sm:px-2.5 py-0.5 sm:py-1 shadow-sm">
+        <div className="flex items-center gap-1.5 bg-[var(--bg-raised)] border border-[var(--border)] rounded-full px-2 sm:px-2.5 py-0.5 sm:py-1 shadow-sm">
           {/* Status Indicator Dot */}
           <div
             className={`w-2 h-2 rounded-full transition-all shrink-0 ${
-              isRunning ? 'bg-[#26a269] shadow-[0_0_8px_#26a269]' : 'bg-[#666666]'
+              isRunning ? 'bg-[var(--success)] shadow-[0_0_8px_var(--success)]' : 'bg-[var(--text-faint)]'
             }`}
           />
 
-          <span className="text-[11px] font-medium text-[#f1f1f1] pr-0.5 hidden lg:inline">
+          <span className="text-[11px] font-medium text-[var(--text-strong)] pr-0.5 hidden lg:inline">
             {isRunning ? 'RUNNING' : 'PAUSED'}
           </span>
 
@@ -299,13 +300,13 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
           <div
             onClick={onToggleSimulation}
             className={`w-10 h-5.5 sm:w-11 sm:h-6 rounded-full p-0.5 transition-colors cursor-pointer relative shadow-inner shrink-0 ${
-              isRunning ? 'bg-[#26a269]' : 'bg-[#3e3e3e]'
+              isRunning ? 'bg-[var(--success)]' : 'bg-[var(--border-strong)]'
             }`}
             title={isRunning ? 'Pause simulation (Space)' : 'Start simulation (Space)'}
           >
             <div
               className={`w-4.5 h-4.5 sm:w-5 sm:h-5 rounded-full bg-white shadow-md transform transition-transform duration-200 ease-out flex items-center justify-center ${
-                isRunning ? 'translate-x-4.5 sm:translate-x-5 text-[#26a269]' : 'translate-x-0 text-[#666666]'
+                isRunning ? 'translate-x-4.5 sm:translate-x-5 text-[var(--success)]' : 'translate-x-0 text-[var(--text-faint)]'
               }`}
             >
               {isRunning ? <PlayIcon size={9} /> : <PauseIcon size={9} />}
@@ -318,8 +319,8 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
             disabled={isRunning}
             className={`p-1 rounded-full transition-colors ${
               isRunning
-                ? 'opacity-25 cursor-not-allowed text-gray-500'
-                : 'text-[#dedede] hover:text-white hover:bg-white/15'
+                ? 'opacity-25 cursor-not-allowed text-[var(--text-faint)]'
+                : 'text-[var(--text)] hover:text-[var(--text-strong)] hover:bg-[var(--press)]'
             }`}
             title="Step simulation 1 cycle"
           >
@@ -329,7 +330,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
           {/* Reset Engine Button */}
           <button
             onClick={onResetSimulation}
-            className="p-1 rounded-full text-[#dedede] hover:text-white hover:bg-white/15 transition-colors"
+            className="p-1 rounded-full text-[var(--text)] hover:text-[var(--text-strong)] hover:bg-[var(--press)] transition-colors"
             title="Reset circuit states"
           >
             <ResetIcon size={12} />
@@ -341,21 +342,21 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
       <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
         {/* Clock rate control, only while a clock part is on the canvas */}
         <div
-          className={`items-center gap-1.5 bg-[#2e2e2e] border border-white/10 rounded-lg px-2 py-1 text-xs shadow-sm ${
+          className={`items-center gap-1.5 bg-[var(--bg-raised)] border border-[var(--border)] rounded-lg px-2 py-1 text-xs shadow-sm ${
             hasClock ? 'hidden sm:flex' : 'hidden'
           }`}
         >
-          <SpeedIcon size={13} className="text-[#3584e4]" />
+          <SpeedIcon size={13} className="text-[var(--accent)]" />
           <input
             type="range"
             min="1"
             max="10"
             value={simulationSpeed}
             onChange={(e) => onChangeSpeed(Number(e.target.value))}
-            className="hidden md:block w-16 lg:w-20 accent-[#3584e4] h-1.5 bg-[#424242] rounded-lg cursor-pointer"
+            className="hidden md:block w-16 lg:w-20 accent-[var(--accent)] h-1.5 bg-[var(--border-input)] rounded-lg cursor-pointer"
             title={`Clock rate: ${simulationSpeed}x`}
           />
-          <span className="hidden md:inline font-mono text-[10px] text-[#a1a1aa] w-5 text-right">
+          <span className="hidden md:inline font-mono text-[10px] text-[var(--text-muted)] w-5 text-right">
             {simulationSpeed}x
           </span>
         </div>
@@ -365,8 +366,8 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
           onClick={onToggleScope}
           className={`p-1.5 rounded-lg border transition-colors ${
             isScopeOpen
-              ? 'bg-[#3584e4] text-white border-[#3584e4]'
-              : 'bg-[#2e2e2e] text-[#dedede] border-white/10 hover:text-white hover:bg-white/10'
+              ? 'bg-[var(--accent)] text-[var(--text-strong)] border-[var(--accent)]'
+              : 'bg-[var(--bg-raised)] text-[var(--text)] border-[var(--border)] hover:text-[var(--text-strong)] hover:bg-[var(--hover)]'
           }`}
           title="Toggle oscilloscope (logic analyser)"
         >
@@ -377,10 +378,10 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
         <div className="relative" ref={settingsRef}>
           <button
             onClick={() => setShowSettings(!showSettings)}
-            className={`p-1.5 rounded-lg border border-white/10 transition-colors ${
+            className={`p-1.5 rounded-lg border border-[var(--border)] transition-colors ${
               showSettings
-                ? 'bg-[#3584e4] text-white'
-                : 'bg-[#2e2e2e] text-[#dedede] hover:text-white hover:bg-white/10'
+                ? 'bg-[var(--accent)] text-[var(--text-strong)]'
+                : 'bg-[var(--bg-raised)] text-[var(--text)] hover:text-[var(--text-strong)] hover:bg-[var(--hover)]'
             }`}
             title="Canvas & Wire Settings"
           >
@@ -389,23 +390,23 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
 
           {/* Settings Popover */}
           {showSettings && (
-            <div className="absolute right-0 top-full mt-2 w-64 bg-[#282828] border border-white/10 rounded-xl shadow-2xl p-3 z-50 text-xs space-y-3">
-              <div className="font-semibold text-white border-b border-white/10 pb-1.5">
+            <div className="absolute right-0 top-full mt-2 w-64 bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl shadow-2xl p-3 z-50 text-xs space-y-3">
+              <div className="font-semibold text-[var(--text-strong)] border-b border-[var(--border)] pb-1.5">
                 Canvas Preferences
               </div>
 
               {/* Wire Routing Style */}
               <div>
-                <label className="text-[11px] text-[#8a8a8e] uppercase font-bold block mb-1.5">
+                <label className="text-[11px] text-[var(--text-faint)] uppercase font-bold block mb-1.5">
                   Wire Routing
                 </label>
-                <div className="grid grid-cols-2 gap-1 bg-[#1e1e1e] p-1 rounded-lg border border-white/5">
+                <div className="grid grid-cols-2 gap-1 bg-[var(--bg-sunken)] p-1 rounded-lg border border-[var(--border)]">
                   <button
                     onClick={() => onChangeRoutingStyle('bezier')}
                     className={`py-1 rounded text-center font-medium transition-colors ${
                       routingStyle === 'bezier'
-                        ? 'bg-[#3584e4] text-white shadow-sm'
-                        : 'text-[#a1a1aa] hover:text-white'
+                        ? 'bg-[var(--accent)] text-[var(--text-strong)] shadow-sm'
+                        : 'text-[var(--text-muted)] hover:text-[var(--text-strong)]'
                     }`}
                   >
                     Bézier Curve
@@ -414,8 +415,8 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                     onClick={() => onChangeRoutingStyle('orthogonal')}
                     className={`py-1 rounded text-center font-medium transition-colors ${
                       routingStyle === 'orthogonal'
-                        ? 'bg-[#3584e4] text-white shadow-sm'
-                        : 'text-[#a1a1aa] hover:text-white'
+                        ? 'bg-[var(--accent)] text-[var(--text-strong)] shadow-sm'
+                        : 'text-[var(--text-muted)] hover:text-[var(--text-strong)]'
                     }`}
                   >
                     90° Step
@@ -425,16 +426,16 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
 
               {/* Grid Style */}
               <div>
-                <label className="text-[11px] text-[#8a8a8e] uppercase font-bold block mb-1.5">
+                <label className="text-[11px] text-[var(--text-faint)] uppercase font-bold block mb-1.5">
                   Grid Style
                 </label>
-                <div className="grid grid-cols-2 gap-1 bg-[#1e1e1e] p-1 rounded-lg border border-white/5">
+                <div className="grid grid-cols-2 gap-1 bg-[var(--bg-sunken)] p-1 rounded-lg border border-[var(--border)]">
                   <button
                     onClick={() => onChangeGridStyle('dots')}
                     className={`py-1 rounded text-center font-medium transition-colors ${
                       gridStyle === 'dots'
-                        ? 'bg-[#3584e4] text-white shadow-sm'
-                        : 'text-[#a1a1aa] hover:text-white'
+                        ? 'bg-[var(--accent)] text-[var(--text-strong)] shadow-sm'
+                        : 'text-[var(--text-muted)] hover:text-[var(--text-strong)]'
                     }`}
                   >
                     Dot Matrix
@@ -443,14 +444,17 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                     onClick={() => onChangeGridStyle('lines')}
                     className={`py-1 rounded text-center font-medium transition-colors ${
                       gridStyle === 'lines'
-                        ? 'bg-[#3584e4] text-white shadow-sm'
-                        : 'text-[#a1a1aa] hover:text-white'
+                        ? 'bg-[var(--accent)] text-[var(--text-strong)] shadow-sm'
+                        : 'text-[var(--text-muted)] hover:text-[var(--text-strong)]'
                     }`}
                   >
                     Gridlines
                   </button>
                 </div>
               </div>
+
+              {/* Theme */}
+              <ThemePicker />
             </div>
           )}
         </div>
@@ -459,10 +463,10 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
         <div className="relative" ref={menuRef}>
           <button
             onClick={() => setShowPrimaryMenu(!showPrimaryMenu)}
-            className={`p-1.5 rounded-lg border border-white/10 transition-colors ${
+            className={`p-1.5 rounded-lg border border-[var(--border)] transition-colors ${
               showPrimaryMenu
-                ? 'bg-white/20 text-white'
-                : 'bg-[#2e2e2e] text-[#dedede] hover:text-white hover:bg-white/10'
+                ? 'bg-[var(--press)] text-[var(--text-strong)]'
+                : 'bg-[var(--bg-raised)] text-[var(--text)] hover:text-[var(--text-strong)] hover:bg-[var(--hover)]'
             }`}
             title="Primary Menu"
           >
@@ -471,31 +475,31 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
 
           {/* Primary Menu Dropdown */}
           {showPrimaryMenu && (
-            <div className="absolute right-0 top-full mt-2 w-56 bg-[#282828] border border-white/10 rounded-xl shadow-2xl p-1.5 z-50 text-xs divide-y divide-white/5">
+            <div className="absolute right-0 top-full mt-2 w-56 bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl shadow-2xl p-1.5 z-50 text-xs divide-y divide-[var(--border)]">
               <div className="pb-1">
                 <button
                   onClick={() => {
                     onNewCircuit();
                     setShowPrimaryMenu(false);
                   }}
-                  className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-white/10 text-white flex items-center justify-between"
+                  className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-[var(--hover)] text-[var(--text-strong)] flex items-center justify-between"
                 >
                   <span>New Circuit</span>
-                  <span className="text-[10px] text-[#8a8a8e]">Ctrl+N</span>
+                  <span className="text-[10px] text-[var(--text-faint)]">Ctrl+N</span>
                 </button>
 
                 <div className="relative" ref={samplesRef}>
                   <button
                     onClick={() => setShowSamplesMenu(!showSamplesMenu)}
-                    className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-white/10 text-white flex items-center justify-between"
+                    className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-[var(--hover)] text-[var(--text-strong)] flex items-center justify-between"
                   >
                     <span>Sample Circuits</span>
-                    <span className="text-[10px] text-[#3584e4]">▸</span>
+                    <span className="text-[10px] text-[var(--accent)]">▸</span>
                   </button>
 
                   {/* Submenu for sample circuits */}
                   {showSamplesMenu && (
-                    <div className="pl-3 py-1 space-y-1 bg-[#1e1e1e] rounded-lg mt-1 border border-white/5">
+                    <div className="pl-3 py-1 space-y-1 bg-[var(--bg-sunken)] rounded-lg mt-1 border border-[var(--border)]">
                       {sampleCircuits.map((sample) => (
                         <button
                           key={sample.id}
@@ -504,10 +508,10 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                             setShowPrimaryMenu(false);
                             setShowSamplesMenu(false);
                           }}
-                          className="w-full text-left px-2 py-1 rounded hover:bg-white/10 text-slate-200 hover:text-white"
+                          className="w-full text-left px-2 py-1 rounded hover:bg-[var(--hover)] text-[var(--text)] hover:text-[var(--text-strong)]"
                         >
                           <div className="font-medium">{sample.name}</div>
-                          <div className="text-[10px] text-[#8a8a8e] truncate">
+                          <div className="text-[10px] text-[var(--text-faint)] truncate">
                             {sample.description}
                           </div>
                         </button>
@@ -523,7 +527,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                     onExport('png');
                     setShowPrimaryMenu(false);
                   }}
-                  className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-white/10 text-white"
+                  className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-[var(--hover)] text-[var(--text-strong)]"
                 >
                   Take Canvas Screenshot
                 </button>
@@ -532,16 +536,16 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                     onNewCircuit();
                     setShowPrimaryMenu(false);
                   }}
-                  className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-red-500/20 text-red-400 flex items-center gap-1.5"
+                  className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-[var(--danger-soft)] text-[var(--danger)] flex items-center gap-1.5"
                 >
                   <TrashIcon size={12} />
                   <span>Clear Canvas</span>
                 </button>
               </div>
 
-              <div className="pt-1 text-[11px] text-[#8a8a8e] px-2 py-1">
+              <div className="pt-1 text-[11px] text-[var(--text-faint)] px-2 py-1">
                 <div>Version 2.0</div>
-                <div className="text-[10px] text-[#666666]">Libadwaita / Konva.js</div>
+                <div className="text-[10px] text-[var(--text-faint)]">Libadwaita / Konva.js</div>
               </div>
             </div>
           )}
