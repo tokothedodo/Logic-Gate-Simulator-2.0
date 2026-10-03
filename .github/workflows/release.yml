@@ -4,6 +4,11 @@ on:
   push:
     tags: ['v*']
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Version tag to release, e.g. v2.0.0'
+        required: true
+        type: string
 
 jobs:
   bundle:
@@ -15,13 +20,13 @@ jobs:
         include:
           - label: Linux AppImage
             os: ubuntu-22.04
-            target: appimage
+            bundles: appimage
           - label: Windows installer
             os: windows-latest
-            target: nsis
+            bundles: nsis
           - label: macOS app
             os: macos-latest
-            target: app
+            bundles: app,dmg
 
     steps:
       - uses: actions/checkout@v4
@@ -34,7 +39,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
-          key: ${{ matrix.target }}
+          key: ${{ matrix.bundles }}
 
       - name: Install Linux build dependencies
         if: matrix.os == 'ubuntu-22.04'
@@ -42,8 +47,14 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y \
             libwebkit2gtk-4.1-dev \
-            libappindicator3-dev \
+            libayatana-appindicator3-dev \
             librsvg2-dev \
+            build-essential \
+            curl \
+            wget \
+            file \
+            libxdo-dev \
+            libssl-dev \
             patchelf
 
       - name: Bundle
@@ -51,14 +62,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: ${{ github.ref_name }}
-          releaseName: Logic Gate Simulator ${{ github.ref_name }}
+          tagName: ${{ inputs.tag || github.ref_name }}
+          releaseName: Logic Gate Simulator ${{ inputs.tag || github.ref_name }}
           releaseBody: |
             Desktop builds of Logic Gate Simulator 2.0.
             See the README for supported file formats.
           releaseDraft: true
           prerelease: false
-          args: --target ${{ matrix.target }}
+          args: --bundles ${{ matrix.bundles }}
 
   checks:
     name: Types and build
