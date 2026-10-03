@@ -36,11 +36,16 @@ jobs:
           cache: npm
       - run: npm ci
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-linux-gnu
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
           key: ${{ matrix.bundles }}
-
+          
+      - name: Install Linux Rust target
+        if: matrix.os == 'ubuntu-22.04'
+        run: rustup target add x86_64-unknown-linux-gnu     
       - name: Install Linux build dependencies
         if: matrix.os == 'ubuntu-22.04'
         run: |
