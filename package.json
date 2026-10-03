@@ -4,7 +4,7 @@
   "description": "Logic circuit simulator for building, simulating and sharing digital circuits.",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tokthedodo/Logic-Gate-Simulator-2.0.git"
+    "url": "git+https://github.com/tokothedodo/Logic-Gate-Simulator-2.0.git"
   },
   "private": true,
   "version": "2.0.0",
