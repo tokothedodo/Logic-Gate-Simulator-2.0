@@ -13,6 +13,8 @@ export interface CustomCircuitComponent {
   label?: string;
   numInputs?: number;
   state?: number;
+  /** Degrees clockwise about the part's own centre. */
+  rotation?: number;
   /** Position relative to the block origin. */
   position: Point;
   pins: { id: string; type: 'input' | 'output'; name: string; offset: Point }[];
@@ -59,6 +61,40 @@ export const getCustomCircuitByType = (type: string) =>
     ? store.get(nameFromCustomType(type))
     : undefined;
 
+/** Drops a definition, so it disappears from the sidebar and cannot be placed. */
+export const deleteCustomCircuit = (slug: string): boolean => store.delete(slug);
+
+/**
+ * Renames a definition. The slug is deliberately left alone, because it is
+ * baked into the `custom:` type of every placed block and into saved files.
+ */
+export const renameCustomCircuit = (slug: string, name: string): CustomCircuitDef | undefined => {
+  const def = store.get(slug);
+  if (!def) return undefined;
+  def.name = name;
+  return def;
+};
+
+export interface CustomCircuitRename {
+  pinId: string;
+  name: string;
+}
+
+/** Renames terminals in place, ignoring blanks and unknown pins. */
+export const renameCustomCircuitTerminals = (
+  slug: string,
+  renames: CustomCircuitRename[]
+): CustomCircuitDef | undefined => {
+  const def = store.get(slug);
+  if (!def) return undefined;
+  const wanted = new Map(renames.map((r) => [r.pinId, r.name.trim()]));
+  [...def.inputs, ...def.outputs].forEach((pin) => {
+    const next = wanted.get(pin.pinId);
+    if (next) pin.name = next;
+  });
+  return def;
+};
+
 export const listCustomCircuits = (): CustomCircuitDef[] =>
   Array.from(store.values());
 
@@ -68,61 +104,126 @@ interface AnyComponent {
   label?: string;
   numInputs?: number;
   state?: number;
+  rotation?: number;
   position: Point;
   pins?: { id: string; type: 'input' | 'output'; name: string; offset: Point }[];
 }
 
 export interface BuildResult {
   def: CustomCircuitDef;
-  /** Inner pin ids that were wired to the outside world. */
+  /** Inner pin ids that were promoted to terminals on the block. */
   exposed: string[];
 }
 
+type Pin = NonNullable<AnyComponent['pins']>[number];
+
 /**
- * Wraps a selection into a reusable block. Pins that carry a wire out of the
- * selection become terminals on the block; everything else stays internal.
+ * Parts that become input terminals. This follows Logicly, where a toggle
+ * switch inside the selection turns into a connector on the finished block.
+ */
+const CUSTOM_INPUT_SOURCES = new Set(['toggle', 'pushbutton', 'clock']);
+
+/** Parts that become output terminals, which is Logicly's light bulbs. */
+const CUSTOM_OUTPUT_SINKS = new Set(['led', 'probe']);
+
+/** Multi-bit parts would need a bus terminal, so they stay inside for now. */
+const CUSTOM_UNSUPPORTED = new Set(['numin', 'numout', 'sevenseg']);
+
+const INPUT_LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+const pinOfType = (comp: AnyComponent, type: Pin['type']) =>
+  (comp.pins ?? []).find((p) => p.type === type);
+
+/** Top to bottom, then left to right, so terminals keep the layout's order. */
+const byLayout = (a: AnyComponent, b: AnyComponent) =>
+  a.position.y - b.position.y || a.position.x - b.position.x;
+
+export interface CustomCircuitInspection {
+  inputs: number;
+  outputs: number;
+  unsupported: string[];
+  ok: boolean;
+  message: string;
+}
+
+/**
+ * Reports what a selection would export. Logicly refuses to build an
+ * integrated circuit unless it holds at least one toggle switch and one light
+ * bulb, since those are the only parts that become connectors.
+ */
+export const inspectCustomCircuit = (components: AnyComponent[]): CustomCircuitInspection => {
+  const norm = (c: AnyComponent) => c.type.toLowerCase();
+  const inputs = components.filter(
+    (c) => CUSTOM_INPUT_SOURCES.has(norm(c)) && pinOfType(c, 'output')
+  ).length;
+  const outputs = components.filter(
+    (c) => CUSTOM_OUTPUT_SINKS.has(norm(c)) && pinOfType(c, 'input')
+  ).length;
+  const unsupported = [
+    ...new Set(components.map(norm).filter((t) => CUSTOM_UNSUPPORTED.has(t))),
+  ];
+
+  const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+  let message: string;
+  if (inputs === 0) {
+    message = 'Select at least one toggle switch. Switches become the block inputs.';
+  } else if (outputs === 0) {
+    message = 'Select at least one LED. LEDs become the block outputs.';
+  } else {
+    message = `${plural(inputs, 'input')} from the switches, ${plural(outputs, 'output')} from the LEDs.`;
+  }
+  if (unsupported.length > 0) {
+    message += ` ${unsupported.join(', ')} cannot be exported yet and stays inside the block.`;
+  }
+
+  return { inputs, outputs, unsupported, ok: inputs > 0 && outputs > 0, message };
+};
+
+/**
+ * Wraps a selection into a reusable block. Following Logicly, the toggle
+ * switches in the selection become the block's input terminals and the LEDs
+ * become its outputs; every other part, and every wire between them, stays
+ * internal. Run `inspectCustomCircuit` first, since a selection missing either
+ * kind has nothing to expose.
  */
 export const buildCustomCircuit = (
   name: string,
   components: AnyComponent[],
   connections: Connection[]
 ): BuildResult => {
-  const selected = new Set(components.map((c) => c.id));
   const minX = Math.min(...components.map((c) => c.position.x));
   const minY = Math.min(...components.map((c) => c.position.y));
   const maxX = Math.max(...components.map((c) => c.position.x));
   const maxY = Math.max(...components.map((c) => c.position.y));
 
-  const exposedInputs = new Map<string, CustomCircuitPin>();
-  const exposedOutputs = new Map<string, CustomCircuitPin>();
+  const ordered = [...components].sort(byLayout);
 
-  const pinOwner = new Map<string, { comp: AnyComponent; pin: NonNullable<AnyComponent['pins']>[number] }>();
+  const pinOwner = new Map<string, { comp: AnyComponent; pin: Pin }>();
   components.forEach((c) =>
     (c.pins ?? []).forEach((pin) => pinOwner.set(pin.id, { comp: c, pin }))
   );
 
-  connections.forEach((conn) => {
-    const src = pinOwner.get(conn.sourcePortId);
-    const dst = pinOwner.get(conn.targetPortId);
-    const srcInside = Boolean(src && selected.has(src.comp.id));
-    const dstInside = Boolean(dst && selected.has(dst.comp.id));
-    if (srcInside === dstInside) return;
-
-    if (dstInside && dst && !exposedInputs.has(dst.pin.id)) {
-      exposedInputs.set(dst.pin.id, {
-        pinId: dst.pin.id,
-        name: labelFor(dst.comp, dst.pin.name),
+  const inputs: CustomCircuitPin[] = ordered
+    .filter((c) => CUSTOM_INPUT_SOURCES.has(c.type.toLowerCase()) && pinOfType(c, 'output'))
+    .map((comp, i) => {
+      const pin = pinOfType(comp, 'output') as Pin;
+      return {
+        pinId: pin.id,
+        name: comp.label?.trim() || INPUT_LETTERS[i] || `IN${i + 1}`,
         type: 'input',
-      });
-    }
-    if (srcInside && src && !exposedOutputs.has(src.pin.id)) {
-      exposedOutputs.set(src.pin.id, {
-        pinId: src.pin.id,
-        name: labelFor(src.comp, src.pin.name),
+      };
+    });
+
+  const outputs: CustomCircuitPin[] = ordered
+    .filter((c) => CUSTOM_OUTPUT_SINKS.has(c.type.toLowerCase()) && pinOfType(c, 'input'))
+    .map((comp, i) => {
+      const pin = pinOfType(comp, 'input') as Pin;
+      return {
+        pinId: pin.id,
+        name: comp.label?.trim() || `OUT${i + 1}`,
         type: 'output',
-      });
-    }
-  });
+      };
+    });
 
   const def: CustomCircuitDef = {
     name,
@@ -133,23 +234,19 @@ export const buildCustomCircuit = (
       label: c.label,
       numInputs: c.numInputs,
       state: c.state,
+      rotation: c.rotation,
       position: { x: c.position.x - minX, y: c.position.y - minY },
       pins: (c.pins ?? []).map((pin) => ({ ...pin, offset: { ...pin.offset } })),
     })),
     connections: connections
       .filter((conn) => pinOwner.has(conn.sourcePortId) && pinOwner.has(conn.targetPortId))
       .map((conn) => ({ ...conn })),
-    inputs: Array.from(exposedInputs.values()),
-    outputs: Array.from(exposedOutputs.values()),
+    inputs,
+    outputs,
     size: { width: maxX - minX + 80, height: maxY - minY + 60 },
   };
 
-  return { def, exposed: [...exposedInputs.keys(), ...exposedOutputs.keys()] };
-};
-
-const labelFor = (comp: AnyComponent, pinName: string) => {
-  const base = comp.label || comp.type;
-  return `${base}·${pinName}`;
+  return { def, exposed: [...inputs.map((p) => p.pinId), ...outputs.map((p) => p.pinId)] };
 };
 
 /** Outer pin id on the block for a given inner pin id. */

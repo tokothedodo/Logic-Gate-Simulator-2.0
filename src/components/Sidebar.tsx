@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { componentLibrary, LibraryItem } from './library';
 import { getComponentIcon } from './icons/GateIcons';
-import { SearchIcon, ClearIcon } from './icons/AdwaitaIcons';
+import { SearchIcon, ClearIcon, TrashIcon } from './icons/AdwaitaIcons';
 import { InfoTooltip } from './InfoTooltip';
 import { getComponentInfo } from './componentInfo';
 import { CustomCircuitDef, customTypeFor } from '../engine/customCircuit';
@@ -11,6 +11,7 @@ interface SidebarProps {
   onClose: () => void;
   onStartDrag: (type: string, clientX: number, clientY: number) => void;
   customCircuits: CustomCircuitDef[];
+  onDeleteCustomCircuit: (slug: string) => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -18,6 +19,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onClose,
   onStartDrag,
   customCircuits,
+  onDeleteCustomCircuit,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -179,11 +181,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       </div>
                     </div>
 
-                    <InfoTooltip
-                      title={def.name}
-                      summary="A circuit you grouped into one part. It behaves like the parts inside it."
-                      detail={`${def.components.length} parts · ${def.inputs.length} in · ${def.outputs.length} out`}
-                    />
+                    <div className="flex items-center gap-0.5 shrink-0">
+                      <InfoTooltip
+                        title={def.name}
+                        summary="A circuit you grouped into one part. It behaves like the parts inside it."
+                        detail={`${def.components.length} parts · ${def.inputs.length} in · ${def.outputs.length} out`}
+                      />
+                      <button
+                        type="button"
+                        title={`Delete ${def.name}`}
+                        aria-label={`Delete ${def.name}`}
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDeleteCustomCircuit(def.slug);
+                        }}
+                        className="shrink-0 w-5 h-5 rounded-md flex items-center justify-center text-[var(--text-faint)] hover:text-[var(--danger)] hover:bg-[var(--hover)] opacity-0 group-hover:opacity-100 focus:opacity-100 transition-colors"
+                      >
+                        <TrashIcon size={13} />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>

@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { Stage, Layer, Rect } from 'react-konva';
 import Konva from 'konva';
 import { Grid } from './Grid';
-import { Wire, WireRoutingStyle } from './Wire';
+import { Wire, WireRoutingStyle, WireLoopBounds } from './Wire';
 import {
   ComponentRenderer,
   RenderedPin,
@@ -17,9 +17,15 @@ import { SampleCircuit } from '../components/SampleCircuits';
 import { evaluateCircuit } from '../engine/evaluator';
 import {
   buildCustomCircuit,
+  inspectCustomCircuit,
   getCustomCircuitByType,
+  getCustomCircuit,
+  deleteCustomCircuit,
+  renameCustomCircuit,
+  renameCustomCircuitTerminals,
   customPinId,
   customTypeFor,
+  nameFromCustomType,
   expandCustomCircuits,
   registerCustomCircuit,
   listCustomCircuits,
@@ -36,17 +42,21 @@ import {
   MIN_GATE_INPUTS,
   MAX_GATE_INPUTS,
   supportsCustomInputs,
+  getComponentGeometry,
+  normalizeRotation,
+  rotateOffset,
+  rotatedBounds,
+  DEFAULT_NUMERIC_BITS,
+  MAX_NUMERIC_BITS,
+  MIN_NUMERIC_BITS,
 } from '../components/componentGeometry';
 import { getComponentIcon } from '../components/icons/GateIcons';
 import { componentLibrary } from '../components/library';
 import { Oscilloscope } from '../components/Oscilloscope';
 import { TruthTablePanel } from '../components/TruthTable';
 import { CustomCircuitPrompt } from '../components/CustomCircuitPrompt';
-import {
-  DEFAULT_NUMERIC_BITS,
-  MAX_NUMERIC_BITS,
-  MIN_NUMERIC_BITS,
-} from '../components/componentGeometry';
+import { TextPrompt } from '../components/TextPrompt';
+import { TerminalRenamePrompt } from '../components/TerminalRenamePrompt';
 import { NumberPrompt } from '../components/NumberPrompt';
 import { deriveScopeChannels, wiresForComponents } from '../engine/oscilloscope';
 import { generateTruthTable } from '../engine/truthTable';
@@ -55,6 +65,9 @@ import { useCanvasColors } from '../hooks/useCanvasColors';
 import { TableIcon } from '../components/icons/AdwaitaIcons';
 
 const GRID_SIZE = 20;
+
+/** How close a released pointer must be to a pin, in screen pixels. */
+const PIN_DROP_RADIUS = 14;
 
 /**
  * Arrow keys and WASD pan the viewport.
@@ -144,6 +157,7 @@ export const Canvas: React.FC = () => {
   const [drawingSource, setDrawingSource] = useState<{
     compId: string;
     pinId: string;
+    type: 'input' | 'output';
     position: Point;
   } | null>(null);
   const [previewEndPoint, setPreviewEndPoint] = useState<Point | null>(null);
@@ -183,6 +197,11 @@ export const Canvas: React.FC = () => {
   const [customCircuits, setCustomCircuits] = useState<CustomCircuitDef[]>([]);
   const [customCircuitPrompt, setCustomCircuitPrompt] = useState(false);
   const [customCircuitName, setCustomCircuitName] = useState('');
+
+  // Renaming: a circuit name, an instance label, or the terminal names
+  const [circuitRenamePrompt, setCircuitRenamePrompt] = useState<string | null>(null);
+  const [terminalRenamePrompt, setTerminalRenamePrompt] = useState<string | null>(null);
+  const [labelRenamePrompt, setLabelRenamePrompt] = useState<string | null>(null);
 
   // Truth table generator modal
   const [isTruthTableOpen, setIsTruthTableOpen] = useState(false);
@@ -332,6 +351,18 @@ export const Canvas: React.FC = () => {
   const snapToGrid = useCallback((value: number) => {
     return Math.round(value / GRID_SIZE) * GRID_SIZE;
   }, []);
+
+  // Geometry always comes from the registry, never from the cached box on the
+  // component, so a resized part or a redefined block cannot go stale
+  const geometryOf = (comp: PlacedComponent) =>
+    getComponentGeometry(comp.type, comp.numInputs, comp.numBits);
+
+  // World position of a pin, following the part's rotation
+  const pinPositionOf = (comp: PlacedComponent, pin: RenderedPin): Point => {
+    const geometry = geometryOf(comp);
+    const local = rotateOffset(pin.offset, geometry.width, geometry.height, comp.rotation);
+    return { x: comp.position.x + local.x, y: comp.position.y + local.y };
+  };
 
   // Container size, coalesced to one update per frame so resizing does not
   // re-render React and redraw Konva on every resize event
@@ -637,6 +668,30 @@ export const Canvas: React.FC = () => {
 
       const live = liveRef.current as NonNullable<typeof liveRef.current>;
 
+      // Modified chords are checked before the bare-key shortcuts below,
+      // otherwise Ctrl+V would be read as the select-mode key and Ctrl+A / D
+      // would pan the viewport instead of acting on the selection
+      if (e.ctrlKey || e.metaKey) {
+        const key = e.key.toLowerCase();
+        if (key === 'a') {
+          e.preventDefault();
+          setSelectedCompIds(live.components.map((c) => c.id));
+        } else if (key === 'c') {
+          e.preventDefault();
+          live.copySelection();
+        } else if (key === 'x') {
+          e.preventDefault();
+          live.cutSelection();
+        } else if (key === 'v') {
+          e.preventDefault();
+          live.pasteClipboard();
+        } else if (key === 'd') {
+          e.preventDefault();
+          if (live.copySelection()) live.pasteClipboard();
+        }
+        return;
+      }
+
       if (e.key === 'Shift') {
         shiftHeld.current = e.shiftKey;
       } else if (PAN_KEYS[e.key]) {
@@ -686,24 +741,6 @@ export const Canvas: React.FC = () => {
       } else if (e.key === 'F9') {
         e.preventDefault();
         setIsSidebarOpen((prev) => !prev);
-      } else if ((e.ctrlKey || e.metaKey) && (e.key === 'a' || e.key === 'A')) {
-        e.preventDefault();
-        setSelectedCompIds(live.components.map((c) => c.id));
-      } else if (e.ctrlKey || e.metaKey) {
-        const key = e.key.toLowerCase();
-        if (key === 'c') {
-          e.preventDefault();
-          live.copySelection();
-        } else if (key === 'x') {
-          e.preventDefault();
-          live.cutSelection();
-        } else if (key === 'v') {
-          e.preventDefault();
-          live.pasteClipboard();
-        } else if (key === 'd') {
-          e.preventDefault();
-          if (live.copySelection()) live.pasteClipboard();
-        }
       }
     };
 
@@ -762,6 +799,7 @@ export const Canvas: React.FC = () => {
 
   // Stage Mouse Down: Start marquee selection in 'select' mode
   const handleStageMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    if (e.evt.button !== 0) return;
     if (isDrawingWire) return;
     if (isScopePicking) return;
 
@@ -822,6 +860,19 @@ export const Canvas: React.FC = () => {
   // Stage Mouse Up: Finalize marquee selection box
   const handleStageMouseUp = (e: Konva.KonvaEventObject<MouseEvent>) => {
     if (isScopePicking) return;
+
+    // Releasing with a wire in hand drops it on whichever pin is underneath
+    if (isDrawingWire && drawingSource) {
+      const stage = stageRef.current;
+      const pointer = stage?.getPointerPosition();
+      const dropped = pointer
+        ? pinAt({ x: (pointer.x - (stage as any).x()) / scale, y: (pointer.y - (stage as any).y()) / scale })
+        : null;
+      if (dropped) connectPins(drawingSource, dropped);
+      endWireDrag();
+      return;
+    }
+
     if (marqueeBox?.isSelecting) {
       const left = Math.min(marqueeBox.startX, marqueeBox.currentX);
       const top = Math.min(marqueeBox.startY, marqueeBox.currentY);
@@ -834,16 +885,21 @@ export const Canvas: React.FC = () => {
         const bottom = top + height;
 
         const captured = components.filter((comp) => {
-          const compW = comp.width || 104;
-          const compH = comp.height || 72;
-          const compRight = comp.position.x + compW;
-          const compBottom = comp.position.y + compH;
+          const geometry = geometryOf(comp);
+          const box = rotatedBounds(
+            comp.position,
+            geometry.width,
+            geometry.height,
+            comp.rotation
+          );
+          const compRight = box.x + box.width;
+          const compBottom = box.y + box.height;
 
           // Check if bounding box intersects
           return (
-            comp.position.x < right &&
+            box.x < right &&
             compRight > left &&
-            comp.position.y < bottom &&
+            box.y < bottom &&
             compBottom > top
           );
         });
@@ -865,9 +921,7 @@ export const Canvas: React.FC = () => {
   const handleStageClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
     if (e.target === e.target.getStage() || e.target.name() === 'canvas-bg') {
       if (isDrawingWire) {
-        setIsDrawingWire(false);
-        setDrawingSource(null);
-        setPreviewEndPoint(null);
+        endWireDrag();
       }
     }
   };
@@ -891,73 +945,90 @@ export const Canvas: React.FC = () => {
     [isDrawingWire, drawingSource, hoveredPinId, connections]
   );
 
-  const handlePinClick = (compId: string, pinId: string, type: 'input' | 'output', e: any) => {
+  const handlePinPress = (compId: string, pinId: string, type: 'input' | 'output', e: any) => {
     e.cancelBubble = true;
+    if (isScopePicking || isTablePicking) return;
 
-    // CASE 1: Not currently drawing wire -> ONLY output pin can start drawing
-    if (!isDrawingWire) {
-      if (type === 'output') {
-        const comp = components.find((c) => c.id === compId);
-        if (comp) {
-          const pin = comp.pins?.find((p) => p.id === pinId);
-          if (pin) {
-            const startPos = {
-              x: comp.position.x + pin.offset.x,
-              y: comp.position.y + pin.offset.y,
-            };
-            setDrawingSource({ compId, pinId, position: startPos });
-            setPreviewEndPoint(startPos);
-            setIsDrawingWire(true);
-          }
-        }
-      }
+    // A press while a wire is already in hand releases it back to the canvas
+    if (isDrawingWire) {
+      endWireDrag();
       return;
     }
 
-    // CASE 2: Currently drawing wire -> Connect to INPUT pin
-    if (isDrawingWire && drawingSource) {
-      if (type === 'input') {
-        if (drawingSource.compId === compId && drawingSource.pinId === pinId) {
-          return;
+    const comp = components.find((c) => c.id === compId);
+    const pin = comp?.pins?.find((p) => p.id === pinId);
+    if (!comp || !pin) return;
+
+    // Wires can be pulled from either end; the output side is resolved on drop
+    setDrawingSource({ compId, pinId, type, position: pinPositionOf(comp, pin) });
+    setPreviewEndPoint(pinPositionOf(comp, pin));
+    setIsDrawingWire(true);
+  };
+
+  /** Nearest pin to a world point, so a drop does not have to be pixel perfect. */
+  const pinAt = (world: Point) => {
+    const reach = PIN_DROP_RADIUS / scale;
+    let best: { compId: string; pinId: string; type: 'input' | 'output' } | null = null;
+    let bestDist = reach;
+
+    components.forEach((comp) =>
+      (comp.pins ?? []).forEach((pin) => {
+        const at = pinPositionOf(comp, pin);
+        const dist = Math.hypot(at.x - world.x, at.y - world.y);
+        if (dist < bestDist) {
+          bestDist = dist;
+          best = { compId: comp.id, pinId: pin.id, type: pin.type };
         }
+      })
+    );
 
-        const duplicate = connections.some(
-          (c) => c.sourcePortId === drawingSource.pinId && c.targetPortId === pinId
-        );
+    return best;
+  };
 
-        if (duplicate) {
-          setPinNotice({ pinId, text: 'These two pins are already wired together' });
-          setIsDrawingWire(false);
-          setDrawingSource(null);
-          setPreviewEndPoint(null);
-          return;
-        }
+  const endWireDrag = () => {
+    setIsDrawingWire(false);
+    setDrawingSource(null);
+    setPreviewEndPoint(null);
+  };
 
-        // An input drives one wire, so a pin that already has one refuses it
-        if (connections.some((c) => c.targetPortId === pinId)) {
-          setPinNotice({ pinId, text: 'That input already has a wire' });
-          return;
-        }
+  /** Joins a pressed pin and a dropped one into a wire, output side first. */
+  const connectPins = (
+    from: { compId: string; pinId: string; type: 'input' | 'output' },
+    to: { compId: string; pinId: string; type: 'input' | 'output' }
+  ) => {
+    if (from.type === to.type) return false;
 
-        const newConnection: Connection = {
-          id: `conn_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-          sourceComponentId: drawingSource.compId,
-          sourcePortId: drawingSource.pinId,
-          targetComponentId: compId,
-          targetPortId: pinId,
-        };
+    const source = from.type === 'output' ? from : to;
+    const target = from.type === 'input' ? from : to;
 
-        setConnections((prev) => [...prev, newConnection]);
+    if (source.pinId === target.pinId) return false;
 
-        setIsDrawingWire(false);
-        setDrawingSource(null);
-        setPreviewEndPoint(null);
-      } else {
-        setIsDrawingWire(false);
-        setDrawingSource(null);
-        setPreviewEndPoint(null);
-      }
+    if (
+      connections.some(
+        (c) => c.sourcePortId === source.pinId && c.targetPortId === target.pinId
+      )
+    ) {
+      setPinNotice({ pinId: target.pinId, text: 'These two pins are already wired together' });
+      return false;
     }
+
+    // An input drives one wire, so a pin that already has one refuses it
+    if (connections.some((c) => c.targetPortId === target.pinId)) {
+      setPinNotice({ pinId: target.pinId, text: 'That input already has a wire' });
+      return false;
+    }
+
+    setConnections((prev) => [
+      ...prev,
+      {
+        id: `conn_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        sourceComponentId: source.compId,
+        sourcePortId: source.pinId,
+        targetComponentId: target.compId,
+        targetPortId: target.pinId,
+      },
+    ]);
+    return true;
   };
 
   // Component Selection Handler: supports single select and multi-select (Shift/Ctrl/Cmd)
@@ -1135,6 +1206,61 @@ export const Canvas: React.FC = () => {
     setSelectedCompIds([]);
   };
 
+  // Spin the selection about each part's own centre, so nothing shifts position
+  const rotateSelection = (delta: number) => {
+    const toRotate = new Set(selectedCompIds);
+    if (toRotate.size === 0) return;
+
+    setComponents((prev) =>
+      prev.map((c) => {
+        if (!toRotate.has(c.id)) return c;
+        const next = normalizeRotation((c.rotation ?? 0) + delta);
+        if (next === 0) {
+          const { rotation: _dropped, ...rest } = c;
+          return rest;
+        }
+        return { ...c, rotation: next };
+      })
+    );
+  };
+
+  // Remove a custom circuit definition and every block placed from it
+  const deleteCustomCircuitDefinition = (slug: string) => {
+    const def = getCustomCircuit(slug);
+    if (!def) return;
+
+    const type = customTypeFor(slug);
+    const placedIds = new Set(
+      components.filter((c) => c.type === type).map((c) => c.id)
+    );
+    const placedCount = placedIds.size;
+
+    const question =
+      placedCount > 0
+        ? `Delete "${def.name}"? The ${placedCount} ${
+            placedCount === 1 ? 'copy' : 'copies'
+          } of it on the canvas will go too, along with their wires.`
+        : `Delete "${def.name}" from the Custom list?`;
+
+    if (!confirm(question)) return;
+
+    deleteCustomCircuit(slug);
+    setComponents((prev) => prev.filter((c) => !placedIds.has(c.id)));
+    if (placedCount > 0) {
+      setConnections((prev) =>
+        prev.filter(
+          (conn) =>
+            !placedIds.has(conn.sourceComponentId || '') &&
+            !placedIds.has(conn.targetComponentId || '')
+        )
+      );
+    }
+    setSelectedCompIds((prev) => prev.filter((id) => !placedIds.has(id)));
+    setSelectedConnId(null);
+    setContextMenu(null);
+    setCustomCircuits(listCustomCircuits());
+  };
+
   // Wrap the current selection into a reusable block
   const createCustomCircuit = (name: string) => {
     const selected = components.filter((c) => selectedCompIds.includes(c.id));
@@ -1151,6 +1277,11 @@ export const Canvas: React.FC = () => {
         !selectedIds.has(conn.sourceComponentId || '') &&
         !selectedIds.has(conn.targetComponentId || '')
     );
+
+    // Logicly only builds a block when the selection has switches and bulbs,
+    // since those are the parts that turn into connectors
+    const inspection = inspectCustomCircuit(selected);
+    if (!inspection.ok) return;
 
     const { def } = buildCustomCircuit(name, selected, inside);
     registerCustomCircuit(def);
@@ -1170,34 +1301,54 @@ export const Canvas: React.FC = () => {
       state: 0,
     };
 
-    // Wires that crossed the selection boundary now land on block terminals
-    const remapped = inside
-      .filter(
-        (conn) =>
-          !selectedIds.has(conn.sourceComponentId || '') ||
-          !selectedIds.has(conn.targetComponentId || '')
-      )
-      .map((conn) => ({
-        ...conn,
-        sourcePortId: selectedIds.has(conn.sourceComponentId || '')
-          ? customPinId(compId, conn.sourcePortId)
-          : conn.sourcePortId,
-        targetPortId: selectedIds.has(conn.targetComponentId || '')
-          ? customPinId(compId, conn.targetPortId)
-          : conn.targetPortId,
-        sourceComponentId: selectedIds.has(conn.sourceComponentId || '')
-          ? compId
-          : conn.sourceComponentId,
-        targetComponentId: selectedIds.has(conn.targetComponentId || '')
-          ? compId
-          : conn.targetComponentId,
-      }));
-
+    // Terminals now come from the switches and LEDs inside, so no wire crosses
+    // the boundary any more and the untouched ones outside simply survive
     setComponents((prev) => [...prev.filter((c) => !selectedIds.has(c.id)), block]);
-    setConnections([...outside, ...remapped]);
+    setConnections(outside);
     setSelectedCompIds([compId]);
     setSelectedConnId(null);
     setCustomCircuitPrompt(false);
+    setCustomCircuits(listCustomCircuits());
+  };
+
+  // A definition is shared by every placed copy, so a rename has to reach the
+  // registry, each copy's carried definition, and the pin labels on its pins
+  const applyCustomCircuitRename = (
+    slug: string,
+    update: (def: CustomCircuitDef) => void
+  ) => {
+    const def = getCustomCircuit(slug);
+    if (!def) return;
+    update(def);
+    registerCustomCircuit(def);
+
+    const inputs = def.inputs.map((p) => ({ ...p }));
+    const outputs = def.outputs.map((p) => ({ ...p }));
+
+    setComponents((prev) =>
+      prev.map((c) => {
+        if (c.type !== customTypeFor(slug)) return c;
+
+        const carried = c.customDef as CustomCircuitDef | undefined;
+        const merged: CustomCircuitDef = carried
+          ? { ...carried, name: def.name, inputs, outputs }
+          : def;
+
+        // Pin ids embed the inner id, so the new label can be matched exactly
+        const labels = new Map<string, string>();
+        inputs.forEach((p) => labels.set(customPinId(c.id, p.pinId), p.name));
+        outputs.forEach((p) => labels.set(customPinId(c.id, p.pinId), p.name));
+
+        return {
+          ...c,
+          label: def.name,
+          customDef: merged,
+          pins: (c.pins ?? []).map((pin) =>
+            labels.has(pin.id) ? { ...pin, name: labels.get(pin.id) as string } : pin
+          ),
+        };
+      })
+    );
     setCustomCircuits(listCustomCircuits());
   };
 
@@ -1303,8 +1454,8 @@ export const Canvas: React.FC = () => {
     if (!sourcePin || !targetPin) return [];
 
     return [
-      { x: sourceComp.position.x + sourcePin.offset.x, y: sourceComp.position.y + sourcePin.offset.y },
-      { x: targetComp.position.x + targetPin.offset.x, y: targetComp.position.y + targetPin.offset.y },
+      pinPositionOf(sourceComp, sourcePin),
+      pinPositionOf(targetComp, targetPin),
     ];
   };
 
@@ -1592,6 +1743,7 @@ export const Canvas: React.FC = () => {
             });
           }}
           customCircuits={customCircuits}
+          onDeleteCustomCircuit={deleteCustomCircuitDefinition}
         />
 
         {/* 3. Konva Canvas Area */}
@@ -1650,6 +1802,31 @@ export const Canvas: React.FC = () => {
                 const isSelected = selectedConnId === conn.id;
                 const state = wireStates[conn.id] ?? 0;
 
+                // A part wired back into itself has to loop around its own body
+                let loopBounds: WireLoopBounds | undefined;
+                if (
+                  pts.length >= 2 &&
+                  conn.sourceComponentId &&
+                  conn.sourceComponentId === conn.targetComponentId
+                ) {
+                  const comp = components.find((c) => c.id === conn.sourceComponentId);
+                  if (comp) {
+                    const geometry = geometryOf(comp);
+                    const box = rotatedBounds(
+                      comp.position,
+                      geometry.width,
+                      geometry.height,
+                      comp.rotation
+                    );
+                    loopBounds = {
+                      left: box.x,
+                      top: box.y,
+                      right: box.x + box.width,
+                      bottom: box.y + box.height,
+                    };
+                  }
+                }
+
                 return (
                   <Wire
                     key={conn.id}
@@ -1658,6 +1835,7 @@ export const Canvas: React.FC = () => {
                     state={state}
                     isSelected={isSelected}
                     routingStyle={routingStyle}
+                    loopBounds={loopBounds}
                     onClick={(e) => {
                       e.cancelBubble = true;
                       if (isScopePicking) {
@@ -1696,13 +1874,20 @@ export const Canvas: React.FC = () => {
                     position={comp.position}
                     numInputs={comp.numInputs}
                     numBits={comp.numBits}
+                    rotation={comp.rotation}
                     pins={comp.pins}
                     state={effectiveState}
                     isSelected={isSelected}
                     isDrawingWire={isDrawingWire}
-                    isDraggable={!isScopePicking && !isTablePicking}
+                    // A press that starts on a connector belongs to the wire, not the card
+                  isDraggable={
+                    !isScopePicking &&
+                    !isTablePicking &&
+                    !isDrawingWire &&
+                    !(comp.pins ?? []).some((p) => p.id === hoveredPinId)
+                  }
                     pinStates={pinStates}
-                    onPinClick={(pinId, type, e) => handlePinClick(comp.id, pinId, type, e)}
+                    onPinPress={(pinId, type, e) => handlePinPress(comp.id, pinId, type, e)}
                     isPinTaken={isPinTaken}
                     onPinHover={(pinId, hovering) => setHoveredPinId(hovering ? pinId : null)}
                     onSelect={(id, e) => handleSelectComponent(id, e)}
@@ -1872,19 +2057,71 @@ export const Canvas: React.FC = () => {
             },
           ];
 
-          const explodeSection: ContextMenuSection[] = comp.type.startsWith('custom:')
+          const rotateSection: ContextMenuSection[] = [
+            {
+              actions: [
+                {
+                  id: 'rotate-cw',
+                  label: 'Rotate Clockwise',
+                  onSelect: () => rotateSelection(90),
+                },
+                {
+                  id: 'rotate-ccw',
+                  label: 'Rotate Counter-Clockwise',
+                  onSelect: () => rotateSelection(-90),
+                },
+              ],
+            },
+          ];
+
+          const customSlug = comp.type.startsWith('custom:')
+            ? nameFromCustomType(comp.type)
+            : null;
+
+          const explodeSection: ContextMenuSection[] = customSlug
             ? [
                 {
                   actions: [
+                    {
+                      id: 'rename-circuit',
+                      label: 'Rename Circuit…',
+                      disabled: !getCustomCircuit(customSlug),
+                      onSelect: () => setCircuitRenamePrompt(customSlug),
+                    },
+                    {
+                      id: 'rename-terminals',
+                      label: 'Rename Terminals…',
+                      disabled: !getCustomCircuit(customSlug),
+                      onSelect: () => setTerminalRenamePrompt(customSlug),
+                    },
                     {
                       id: 'explode',
                       label: 'Explode Into Parts',
                       onSelect: () => explodeCustomCircuit(comp.id),
                     },
+                    {
+                      id: 'delete-custom',
+                      label: 'Delete Custom Circuit',
+                      danger: true,
+                      disabled: !getCustomCircuit(customSlug),
+                      onSelect: () => deleteCustomCircuitDefinition(customSlug),
+                    },
                   ],
                 },
               ]
             : [];
+
+          const labelSection: ContextMenuSection[] = [
+            {
+              actions: [
+                {
+                  id: 'rename-label',
+                  label: comp.label ? 'Edit Name…' : 'Name This Part…',
+                  onSelect: () => setLabelRenamePrompt(comp.id),
+                },
+              ],
+            },
+          ];
 
           const customSection: ContextMenuSection[] =
             selectedCompIds.length > 1
@@ -1903,6 +2140,8 @@ export const Canvas: React.FC = () => {
 
           const sections: ContextMenuSection[] = [
             ...gateSection,
+            ...rotateSection,
+            ...labelSection,
             ...customSection,
             ...explodeSection,
             ...clipboardSections,
@@ -1988,11 +2227,63 @@ export const Canvas: React.FC = () => {
         <CustomCircuitPrompt
           name={customCircuitName}
           itemCount={selectedCompIds.length}
+          inspection={inspectCustomCircuit(
+            components.filter((c) => selectedCompIds.includes(c.id))
+          )}
           onChange={setCustomCircuitName}
           onCancel={() => setCustomCircuitPrompt(false)}
           onConfirm={() => createCustomCircuit(customCircuitName.trim() || 'Custom circuit')}
         />
       )}
+
+      {circuitRenamePrompt && getCustomCircuit(circuitRenamePrompt) && (
+        <TextPrompt
+          title="Rename circuit"
+          description="Renames the definition and every placed copy."
+          initial={getCustomCircuit(circuitRenamePrompt)?.name ?? ''}
+          requireText
+          onCancel={() => setCircuitRenamePrompt(null)}
+          onConfirm={(value) => {
+            applyCustomCircuitRename(circuitRenamePrompt, (def) =>
+              renameCustomCircuit(def.slug, value)
+            );
+            setCircuitRenamePrompt(null);
+          }}
+        />
+      )}
+
+      {terminalRenamePrompt && getCustomCircuit(terminalRenamePrompt) && (
+        <TerminalRenamePrompt
+          def={getCustomCircuit(terminalRenamePrompt) as CustomCircuitDef}
+          onCancel={() => setTerminalRenamePrompt(null)}
+          onConfirm={(renames) => {
+            applyCustomCircuitRename(terminalRenamePrompt, (def) =>
+              renameCustomCircuitTerminals(def.slug, renames)
+            );
+            setTerminalRenamePrompt(null);
+          }}
+        />
+      )}
+
+      {labelRenamePrompt &&
+        (() => {
+          const target = components.find((c) => c.id === labelRenamePrompt);
+          if (!target) return null;
+          return (
+            <TextPrompt
+              title={`Name this ${target.type.toLowerCase()}`}
+              description="Shown under the part. Leave it empty to go back to the default."
+              initial={target.label ?? ''}
+              onCancel={() => setLabelRenamePrompt(null)}
+              onConfirm={(value) => {
+                setComponents((prev) =>
+                  prev.map((c) => (c.id === labelRenamePrompt ? { ...c, label: value || undefined } : c))
+                );
+                setLabelRenamePrompt(null);
+              }}
+            />
+          );
+        })()}
 
       {/* Truth table generator modal */}
       {isTruthTableOpen && (

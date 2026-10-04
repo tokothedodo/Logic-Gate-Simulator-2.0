@@ -7,11 +7,14 @@ interface PinProps {
   y: number;
   type: 'input' | 'output';
   name?: string;
+  /** Draws the name beyond the pin instead of over the part's own body. */
+  nameOutside?: boolean;
   state?: number;
   isDrawingWire?: boolean;
   isSelected?: boolean;
   isTaken?: boolean;
   onClick?: (e: any) => void;
+  onPointerDown?: (e: any) => void;
   onHover?: (hovering: boolean) => void;
 }
 
@@ -20,11 +23,13 @@ export const Pin: React.FC<PinProps> = ({
   y,
   type,
   name,
+  nameOutside = false,
   state = 0,
   isDrawingWire = false,
   isSelected = false,
   isTaken = false,
   onClick,
+  onPointerDown,
   onHover,
 }) => {
   const [isHovered, setIsHovered] = useState(false);
@@ -58,6 +63,8 @@ export const Pin: React.FC<PinProps> = ({
     <Group
       onClick={onClick}
       onTap={onClick}
+      onMouseDown={onPointerDown}
+      onTouchStart={onPointerDown}
       onMouseEnter={() => {
         setIsHovered(true);
         onHover && onHover(true);
@@ -111,10 +118,19 @@ export const Pin: React.FC<PinProps> = ({
           fontSize={9}
           fontFamily="system-ui, sans-serif"
           fontStyle="bold"
-          x={type === 'output' ? x - 32 : x + 9}
+          x={
+            nameOutside
+              ? type === 'output'
+                ? x + 9
+                : x - 9 - 30
+              : type === 'output'
+              ? x - 34
+              : x + 9
+          }
           y={y - 5}
-          align={type === 'output' ? 'right' : 'left'}
-          width={24}
+          align={nameOutside ? (type === 'output' ? 'left' : 'right') : type === 'output' ? 'right' : 'left'}
+          width={30}
+          wrap="none"
           listening={false}
         />
       )}

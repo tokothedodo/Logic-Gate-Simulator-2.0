@@ -5,6 +5,13 @@ import { useCanvasColors } from '../hooks/useCanvasColors';
 
 export type WireRoutingStyle = 'bezier' | 'orthogonal';
 
+export interface WireLoopBounds {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+}
+
 interface WireProps {
   id?: string;
   points: Point[];
@@ -13,8 +20,40 @@ interface WireProps {
   isDrawing?: boolean;
   isBlocked?: boolean;
   routingStyle?: WireRoutingStyle;
+  /** Set when a wire runs from a part back into that same part. */
+  loopBounds?: WireLoopBounds;
   onClick?: (e: any) => void;
 }
+
+/** Clearance kept between a feedback wire and the body it loops around. */
+const LOOP_GAP = 26;
+
+/**
+ * A wire whose two ends sit on the same part would otherwise run straight
+ * through that part, hidden underneath it and impossible to grab. This walks
+ * out of the source, round the outside, and back into the target.
+ */
+export const buildSelfLoopPath = (
+  p1: Point,
+  p2: Point,
+  box: WireLoopBounds,
+  gap = LOOP_GAP
+): string => {
+  const midX = (box.left + box.right) / 2;
+  const outX = p1.x >= midX ? box.right + gap : box.left - gap;
+  const inX = p2.x >= midX ? box.right + gap : box.left - gap;
+  // Loop on the side the source is furthest from, so the wire never cuts the body
+  const laneY = p1.y >= p2.y ? box.bottom + gap : box.top - gap;
+
+  return [
+    `M ${p1.x} ${p1.y}`,
+    `L ${outX} ${p1.y}`,
+    `L ${outX} ${laneY}`,
+    `L ${inX} ${laneY}`,
+    `L ${inX} ${p2.y}`,
+    `L ${p2.x} ${p2.y}`,
+  ].join(' ');
+};
 
 export const buildBezierPath = (p1: Point, p2: Point): string => {
   const dx = Math.max(Math.abs(p2.x - p1.x) * 0.5, 40);
@@ -42,6 +81,7 @@ export const Wire: React.FC<WireProps> = ({
   isDrawing = false,
   isBlocked = false,
   routingStyle = 'bezier',
+  loopBounds,
   onClick,
 }) => {
   const c = useCanvasColors();
@@ -51,9 +91,12 @@ export const Wire: React.FC<WireProps> = ({
   const p1 = points[0];
   const p2 = points[points.length - 1];
 
-  const path = routingStyle === 'orthogonal'
-    ? buildOrthogonalPath(p1, p2)
-    : buildBezierPath(p1, p2);
+  const path =
+    loopBounds !== undefined
+      ? buildSelfLoopPath(p1, p2, loopBounds)
+      : routingStyle === 'orthogonal'
+      ? buildOrthogonalPath(p1, p2)
+      : buildBezierPath(p1, p2);
 
   const isHigh = state === 1;
 

@@ -202,16 +202,8 @@ export const GateCanvasSymbol: React.FC<GateCanvasSymbolProps> = ({
             radius={h / 2 - 5}
             fill={c.knob}
           />
-          <Text
-            text={isOn ? '1' : '0'}
-            y={h + 3}
-            width={w}
-            align="center"
-            fontSize={12}
-            fontStyle="bold"
-            fill={isOn ? c.greenText : c.partText}
-            listening={false}
-          />
+          {/* The 1/0 readout sits outside the body, so ComponentRenderer draws
+              it there to keep it upright under a rotated part */}
         </Group>
       );
     }

@@ -20,6 +20,65 @@ export interface ComponentGeometry {
   interactive: boolean;
 }
 
+/** Degrees clockwise, normalised to 0/90/180/270 whenever possible. */
+export const normalizeRotation = (rotation?: number): number => {
+  const deg = ((rotation ?? 0) % 360 + 360) % 360;
+  return deg;
+};
+
+/**
+ * Rotates a point of a part's own box about that box's centre. Pin offsets are
+ * always stored unrotated, so wires and hit tests derive the drawn position.
+ */
+export const rotateOffset = (
+  offset: Point,
+  width: number,
+  height: number,
+  rotation?: number
+): Point => {
+  const deg = normalizeRotation(rotation);
+  if (deg === 0) return offset;
+
+  const cx = width / 2;
+  const cy = height / 2;
+  // Clockwise on screen, where y grows downward
+  if (deg === 90) return { x: cx + cy - offset.y, y: cy - cx + offset.x };
+  if (deg === 180) return { x: width - offset.x, y: height - offset.y };
+  if (deg === 270) return { x: cx - cy + offset.y, y: cy + cx - offset.x };
+
+  const rad = (deg * Math.PI) / 180;
+  const cos = Math.cos(rad);
+  const sin = Math.sin(rad);
+  const dx = offset.x - cx;
+  const dy = offset.y - cy;
+  return { x: cx + dx * cos - dy * sin, y: cy + dx * sin + dy * cos };
+};
+
+/** Axis-aligned bounds of a part's box once it has been rotated about its centre. */
+export const rotatedBounds = (
+  position: Point,
+  width: number,
+  height: number,
+  rotation?: number
+): { x: number; y: number; width: number; height: number } => {
+  const deg = normalizeRotation(rotation);
+  if (deg === 0) return { x: position.x, y: position.y, width, height };
+
+  const rad = (deg * Math.PI) / 180;
+  const cos = Math.abs(Math.cos(rad));
+  const sin = Math.abs(Math.sin(rad));
+  const spanX = width * cos + height * sin;
+  const spanY = width * sin + height * cos;
+
+  // The box keeps its centre, so the bounds grow evenly on both sides
+  return {
+    x: position.x + (width - spanX) / 2,
+    y: position.y + (height - spanY) / 2,
+    width: spanX,
+    height: spanY,
+  };
+};
+
 const GATE_BODY_WIDTH: Record<string, number> = {
   and: 28,
   or: 28,
@@ -339,14 +398,17 @@ const baseGeometry = (type: string, numInputs: number, numBits?: number): Compon
   }
 };
 
-const PIN_SPACING = 14;
+/** Custom blocks get roomier connectors so several stay easy to tell apart. */
+const CUSTOM_PIN_SPACING = 20;
+const CUSTOM_PIN_MARGIN = 14;
 
 const customBlockGeometry = (inputCount: number, outputCount: number): ComponentGeometry => {
   const rows = Math.max(inputCount, outputCount, 1);
-  const height = Math.max(56, rows * PIN_SPACING + 24);
-  const top = (height - (rows - 1) * PIN_SPACING) / 2;
-  const width = 96;
-  const lead = 14;
+  const height = Math.max(64, rows * CUSTOM_PIN_SPACING + CUSTOM_PIN_MARGIN * 2);
+  const top = (height - (rows - 1) * CUSTOM_PIN_SPACING) / 2;
+  // Pins sit on the outer edge, clear of the body and of the name inside it
+  const lead = 18;
+  const width = 108;
 
   return {
     width,
@@ -358,11 +420,11 @@ const customBlockGeometry = (inputCount: number, outputCount: number): Component
     symbolHeight: height - lead * 2,
     inputs: Array.from({ length: inputCount }, (_, i) => ({
       name: `IN${i + 1}`,
-      offset: { x: 0, y: top + i * PIN_SPACING },
+      offset: { x: 0, y: top + i * CUSTOM_PIN_SPACING },
     })),
     outputs: Array.from({ length: outputCount }, (_, i) => ({
       name: `OUT${i + 1}`,
-      offset: { x: width, y: top + i * PIN_SPACING },
+      offset: { x: width, y: top + i * CUSTOM_PIN_SPACING },
     })),
     interactive: false,
   };

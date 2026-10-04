@@ -4,7 +4,7 @@ import { Pin } from '../canvas/Pin';
 import { GateCanvasSymbol } from '../canvas/GateCanvasSymbol';
 import { Point } from '../types';
 import { useCanvasColors } from '../hooks/useCanvasColors';
-import { getComponentGeometry } from '../components/componentGeometry';
+import { getComponentGeometry, rotatedBounds } from '../components/componentGeometry';
 import {
   CUSTOM_TYPE_PREFIX,
   customPinId,
@@ -28,12 +28,14 @@ export interface ComponentRendererProps {
   pins?: RenderedPin[];
   numInputs?: number;
   numBits?: number;
+  /** Degrees clockwise about the part's centre. Pin offsets stay unrotated. */
+  rotation?: number;
   state?: number;
   isSelected?: boolean;
   isDrawingWire?: boolean;
   isDraggable?: boolean;
 pinStates?: Record<string, number>;
-  onPinClick?: (pinId: string, type: 'input' | 'output', e: any) => void;
+  onPinPress?: (pinId: string, type: 'input' | 'output', e: any) => void;
   isPinTaken?: (pinId: string) => boolean;
   onPinHover?: (pinId: string, hovering: boolean) => void;
   onSelect?: (id: string, e: any) => void;
@@ -107,12 +109,13 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
   pins,
   numInputs,
   numBits,
+  rotation = 0,
   state = 0,
   isSelected = false,
   isDrawingWire = false,
   isDraggable = true,
   pinStates = {},
-  onPinClick,
+  onPinPress,
   isPinTaken,
   onPinHover,
   onSelect,
@@ -133,162 +136,201 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
     .filter((p) => p.type === 'input')
     .map((p) => pinStates[p.id] ?? 0);
 
-  const labelY = geometry.height + 6;
+  // Konva rotates around the node's own x/y, so the spin lives on an inner
+  // group centred on the box while the outer one stays anchored at position
+  const labelBox = rotatedBounds({ x: 0, y: 0 }, geometry.width, geometry.height, rotation);
+  const labelX = position.x + labelBox.x;
+
+  // The toggle reads out its value below the body, so it travels with the
+  // name rather than spinning with the pill
+  const isToggle = type.toLowerCase() === 'toggle';
+  const bodyBottom = labelBox.y + labelBox.height;
+  const readoutY = position.y + bodyBottom + 3;
+  const labelY = position.y + bodyBottom + (isToggle ? 19 : 6);
 
   return (
-    <Group
-      x={position.x}
-      y={position.y}
-      draggable={isDraggable && !isDrawingWire}
-      onClick={(e) => {
-        e.cancelBubble = true;
-        onSelect && onSelect(id, e);
-      }}
-      onTap={(e) => {
-        e.cancelBubble = true;
-        onSelect && onSelect(id, e);
-      }}
-      onContextMenu={(e: any) => {
-        e.evt.preventDefault();
-        e.cancelBubble = true;
-        onContextMenu &&
-          onContextMenu(id, { x: e.evt.clientX, y: e.evt.clientY });
-      }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      onDragStart={(e) => {
-        e.cancelBubble = true;
-        const node = e.currentTarget || e.target;
-        onDragStart && onDragStart(id, { x: node.x(), y: node.y() });
-      }}
-      onDragMove={(e) => {
-        const node = e.currentTarget || e.target;
-        onDragMove && onDragMove(id, { x: node.x(), y: node.y() });
-      }}
-      onDragEnd={(e) => {
-        e.cancelBubble = true;
-        const node = e.currentTarget || e.target;
-        onDragEnd && onDragEnd(id, { x: node.x(), y: node.y() });
-      }}
-    >
-      {/* Invisible hit area so bare symbols remain clickable/grabbable */}
-      <Rect
-        width={geometry.width}
-        height={geometry.height}
-        fill="transparent"
-        listening
-      />
+    <>
+      <Group
+        x={position.x}
+        y={position.y}
+        draggable={isDraggable && !isDrawingWire}
+        onClick={(e) => {
+          e.cancelBubble = true;
+          onSelect && onSelect(id, e);
+        }}
+        onTap={(e) => {
+          e.cancelBubble = true;
+          onSelect && onSelect(id, e);
+        }}
+        onContextMenu={(e: any) => {
+          e.evt.preventDefault();
+          e.cancelBubble = true;
+          onContextMenu &&
+            onContextMenu(id, { x: e.evt.clientX, y: e.evt.clientY });
+        }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        onDragStart={(e) => {
+          e.cancelBubble = true;
+          const node = e.currentTarget || e.target;
+          onDragStart && onDragStart(id, { x: node.x(), y: node.y() });
+        }}
+        onDragMove={(e) => {
+          const node = e.currentTarget || e.target;
+          onDragMove && onDragMove(id, { x: node.x(), y: node.y() });
+        }}
+        onDragEnd={(e) => {
+          e.cancelBubble = true;
+          const node = e.currentTarget || e.target;
+          onDragEnd && onDragEnd(id, { x: node.x(), y: node.y() });
+        }}
+      >
+        <Group
+          rotation={rotation}
+          x={geometry.width / 2}
+          y={geometry.height / 2}
+          offsetX={geometry.width / 2}
+          offsetY={geometry.height / 2}
+        >
+          {/* Invisible hit area so bare symbols remain clickable/grabbable */}
+          <Rect
+            width={geometry.width}
+            height={geometry.height}
+            fill="transparent"
+            listening
+          />
 
-      {/* Selection ring only — components render bare, with no card */}
-      {isSelected && (
-        <Rect
-          x={-5}
-          y={-5}
-          width={geometry.width + 10}
-          height={geometry.height + 10}
-          cornerRadius={8}
-          stroke={c.hl}
-          strokeWidth={1.5}
-          dash={[4, 3]}
+          {/* Selection ring only — components render bare, with no card */}
+          {isSelected && (
+            <Rect
+              x={-5}
+              y={-5}
+              width={geometry.width + 10}
+              height={geometry.height + 10}
+              cornerRadius={8}
+              stroke={c.hl}
+              strokeWidth={1.5}
+              dash={[4, 3]}
+              listening={false}
+            />
+          )}
+
+          {type.startsWith(CUSTOM_TYPE_PREFIX) && customDefOf(type) ? (
+            <>
+              <Rect
+                width={geometry.width}
+                height={geometry.height}
+                cornerRadius={8}
+                fill={c.gateBubble}
+                stroke={isSelected ? c.hl : c.partStroke}
+                strokeWidth={1.5}
+                listening={false}
+              />
+              <Text
+                text={customDefOf(type)?.name ?? 'Custom'}
+                fill={c.gateStroke}
+                fontSize={11}
+                fontStyle="bold"
+                fontFamily="system-ui, -apple-system, sans-serif"
+                x={6}
+                y={6}
+                width={geometry.width - 12}
+                align="center"
+                listening={false}
+              />
+              <Text
+                text={`${customDefOf(type)?.inputs.length ?? 0} in · ${
+                  customDefOf(type)?.outputs.length ?? 0
+                } out`}
+                fill={c.partText}
+                fontSize={9}
+                fontFamily="system-ui, -apple-system, sans-serif"
+                x={6}
+                y={geometry.height - 18}
+                width={geometry.width - 12}
+                align="center"
+                listening={false}
+              />
+            </>
+          ) : (
+          <GateCanvasSymbol
+            type={type}
+            x={geometry.symbolX}
+            y={geometry.symbolY}
+            width={geometry.symbolWidth}
+            height={geometry.symbolHeight}
+            state={state}
+            inputStates={inputPinStates}
+            hovered={isHovered}
+            onAction={() => onComponentAction && onComponentAction(id)}
+          />
+          )}
+
+          {pinList.map((pin) => {
+            const pinState = pinStates[pin.id] ?? (pin.type === 'output' ? state : 0);
+            const legEndX = pin.type === 'input' ? geometry.lead : geometry.width - geometry.lead;
+
+            return (
+              <Group key={pin.id}>
+                {/* Schematic leg: pin terminal -> symbol body */}
+                <Line
+                  points={[pin.offset.x, pin.offset.y, legEndX, pin.offset.y]}
+                  stroke={pinState === 1 ? c.greenBright : c.hlDim}
+                  strokeWidth={2}
+                  lineCap="round"
+                  listening={false}
+                />
+
+                <Pin
+                  x={pin.offset.x}
+                  y={pin.offset.y}
+                  type={pin.type}
+                  name={customDef ? pin.name : undefined}
+                  nameOutside={Boolean(customDef)}
+                  state={pinState}
+                  isDrawingWire={isDrawingWire}
+                  isTaken={isPinTaken ? isPinTaken(pin.id) : false}
+                  onHover={(hovering) => onPinHover && onPinHover(pin.id, hovering)}
+                  onPointerDown={(e) => {
+                    e.cancelBubble = true;
+                    onPinPress && onPinPress(pin.id, pin.type, e);
+                  }}
+                />
+              </Group>
+            );
+          })}
+        </Group>
+      </Group>
+
+      {isToggle && (
+        <Text
+          text={state === 1 ? '1' : '0'}
+          fill={state === 1 ? c.greenText : c.partText}
+          fontSize={12}
+          fontStyle="bold"
+          fontFamily="system-ui, -apple-system, sans-serif"
+          x={labelX - 20}
+          y={readoutY}
+          width={labelBox.width + 40}
+          align="center"
           listening={false}
         />
       )}
 
-      {type.startsWith(CUSTOM_TYPE_PREFIX) && customDefOf(type) ? (
-        <>
-          <Rect
-            width={geometry.width}
-            height={geometry.height}
-            cornerRadius={8}
-            fill={c.gateBubble}
-            stroke={isSelected ? c.hl : c.partStroke}
-            strokeWidth={1.5}
-            listening={false}
-          />
-          <Text
-            text={customDefOf(type)?.name ?? 'Custom'}
-            fill={c.gateStroke}
-            fontSize={11}
-            fontStyle="bold"
-            fontFamily="system-ui, -apple-system, sans-serif"
-            x={6}
-            y={6}
-            width={geometry.width - 12}
-            align="center"
-            listening={false}
-          />
-          <Text
-            text={`${customDefOf(type)?.inputs.length ?? 0} in · ${
-              customDefOf(type)?.outputs.length ?? 0
-            } out`}
-            fill={c.partText}
-            fontSize={9}
-            fontFamily="system-ui, -apple-system, sans-serif"
-            x={6}
-            y={geometry.height - 18}
-            width={geometry.width - 12}
-            align="center"
-            listening={false}
-          />
-        </>
-      ) : (
-      <GateCanvasSymbol
-        type={type}
-        x={geometry.symbolX}
-        y={geometry.symbolY}
-        width={geometry.symbolWidth}
-        height={geometry.symbolHeight}
-        state={state}
-        inputStates={inputPinStates}
-        hovered={isHovered}
-        onAction={() => onComponentAction && onComponentAction(id)}
-      />
+      {displayLabel && (
+        <Text
+          text={displayLabel}
+          fill={isHovered ? c.gateStroke : c.pinIdle}
+          fontSize={9}
+          fontStyle="bold"
+          fontFamily="system-ui, -apple-system, sans-serif"
+          x={labelX - 20}
+          y={labelY}
+          width={labelBox.width + 40}
+          align="center"
+          listening={false}
+        />
       )}
-
-      <Text
-        text={displayLabel}
-        fill={isHovered ? c.gateStroke : c.pinIdle}
-        fontSize={9}
-        fontStyle="bold"
-        fontFamily="system-ui, -apple-system, sans-serif"
-        x={-20}
-        y={labelY}
-        width={geometry.width + 40}
-        align="center"
-        listening={false}
-      />
-
-      {pinList.map((pin) => {
-        const pinState = pinStates[pin.id] ?? (pin.type === 'output' ? state : 0);
-        const legEndX = pin.type === 'input' ? geometry.lead : geometry.width - geometry.lead;
-
-        return (
-          <Group key={pin.id}>
-            {/* Schematic leg: pin terminal -> symbol body */}
-            <Line
-              points={[pin.offset.x, pin.offset.y, legEndX, pin.offset.y]}
-              stroke={pinState === 1 ? c.greenBright : c.hlDim}
-              strokeWidth={2}
-              lineCap="round"
-              listening={false}
-            />
-
-            <Pin
-              x={pin.offset.x}
-              y={pin.offset.y}
-              type={pin.type}
-              state={pinState}
-              isDrawingWire={isDrawingWire}
-              isTaken={isPinTaken ? isPinTaken(pin.id) : false}
-              onHover={(hovering) => onPinHover && onPinHover(pin.id, hovering)}
-              onClick={(e) => {
-                e.cancelBubble = true;
-                onPinClick && onPinClick(pin.id, pin.type, e);
-              }}
-            />
-          </Group>
-        );
-      })}
-    </Group>
+    </>
   );
 };

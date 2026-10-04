@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { TruthTableResult } from '../engine/truthTable';
 import { CloseIcon } from './icons/AdwaitaIcons';
 
@@ -21,16 +21,11 @@ export const TruthTablePanel: React.FC<TruthTablePanelProps> = ({
   onTogglePicking,
   onShowAll,
 }) => {
-  const highlightCol = useMemo(() => {
-    if (!table) return -1;
-    return table.inputs.length;
-  }, [table]);
-
   return (
     <div className="fixed inset-0 z-[90] flex items-center justify-center p-6">
       <div className="absolute inset-0 bg-black/55" onClick={onClose} />
 
-      <div className="relative w-full max-w-2xl max-h-[80vh] bg-[var(--bg-surface)]/98 border border-[var(--border)] rounded-2xl shadow-2xl backdrop-blur-md flex flex-col overflow-hidden">
+      <div className="relative w-full max-w-2xl max-h-[80vh] bg-[var(--bg-surface)] border border-[var(--border)] rounded-2xl shadow-2xl flex flex-col overflow-hidden">
         <div className="flex items-center justify-between px-4 py-2.5 border-b border-[var(--border)] shrink-0">
           <div className="flex items-center gap-2 min-w-0">
             <span className="text-xs font-bold uppercase tracking-wide text-[var(--text)]">
@@ -94,7 +89,7 @@ export const TruthTablePanel: React.FC<TruthTablePanelProps> = ({
                     {table.inputs.map((col) => (
                       <th
                         key={col.key}
-                        className="px-2.5 py-1.5 text-left font-sans font-semibold text-[var(--text-faint)] border-b border-[var(--border)] whitespace-nowrap"
+                        className="px-2.5 py-1.5 text-left font-sans font-semibold text-[var(--text-muted)] border-b border-[var(--border)] whitespace-nowrap"
                       >
                         {col.label}
                       </th>
@@ -119,10 +114,12 @@ export const TruthTablePanel: React.FC<TruthTablePanelProps> = ({
                         <td
                           key={colIndex}
                           className={`px-2.5 py-1 ${
-                            colIndex === highlightCol
-                              ? 'text-[var(--success-text)] font-semibold'
+                            colIndex < table.inputs.length
+                              ? value === 1
+                                ? 'text-[var(--text-strong)] font-semibold'
+                                : 'text-[var(--text-faint)]'
                               : value === 1
-                              ? 'text-[var(--text)]'
+                              ? 'text-[var(--success-text)] font-bold'
                               : 'text-[var(--text-faint)]'
                           }`}
                         >
