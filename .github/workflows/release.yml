@@ -88,3 +88,18 @@ jobs:
       - run: npm ci
       - run: npx tsc --noEmit
       - run: npm run build
+
+  publish:
+    name: Publish release
+    runs-on: ubuntu-latest
+    # Every bundle must have attached its assets, and the frontend must still
+    # build, before anything becomes visible on the releases page
+    needs: [bundle, checks]
+    permissions:
+      contents: write
+    steps:
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ inputs.tag || github.ref_name }}
+        run: gh release edit "$TAG" --draft=false
